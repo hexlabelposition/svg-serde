@@ -1,5 +1,10 @@
 # svg-serde
 
+[![npm version](https://img.shields.io/npm/v/svg-serde)](https://www.npmjs.com/package/svg-serde)
+[![Release](https://github.com/hexlabelposition/svg-serde/actions/workflows/release.yml/badge.svg)](https://github.com/hexlabelposition/svg-serde/actions/workflows/release.yml)
+[![Types](https://img.shields.io/npm/types/svg-serde)](https://www.npmjs.com/package/svg-serde)
+[![License](https://img.shields.io/npm/l/svg-serde)](./LICENSE)
+
 **Parse SVG into plain JavaScript objects and serialize them back to SVG.**
 
 `svg-serde` is a TypeScript-first library for working with SVG as structured data. It is designed for SVG editors, icon generators, asset pipelines, and tools that need to inspect, modify, or generate SVG without tying their data model to the browser DOM.

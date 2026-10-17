@@ -1,4 +1,6 @@
 import { SaxesParser } from "saxes";
+import { parseEntityDeclarations } from "./doctype";
+import { createEntityResolver } from "./entities";
 import { SvgParseError, type SvgParseErrorCode } from "./errors";
 import type {
   ParseOptions,
@@ -16,6 +18,8 @@ import type {
  */
 const DEFAULT_MAX_INPUT_LENGTH = 64 * 1024 * 1024;
 const DEFAULT_MAX_DEPTH = 1024;
+const DEFAULT_MAX_ENTITY_EXPANSIONS = 10_000;
+const DEFAULT_MAX_EXPANDED_LENGTH = 1024 * 1024;
 
 /**
  * Parses an SVG string into a document.
@@ -23,7 +27,8 @@ const DEFAULT_MAX_DEPTH = 1024;
  * The input must be well-formed XML with exactly one root element. Names,
  * attribute values, and text are kept as written, with character and entity
  * references decoded and line breaks normalized to `"\n"` as XML requires.
- * External resources are never loaded.
+ * Entities declared in the DOCTYPE internal subset are expanded; external
+ * entities and external DTDs are never loaded.
  *
  * Throws an `SvgParseError` for malformed input or when a limit from
  * `options` is exceeded.
@@ -31,6 +36,11 @@ const DEFAULT_MAX_DEPTH = 1024;
 export function parse(svg: string, options: ParseOptions = {}): SvgDocument {
   const maxInputLength = options.maxInputLength ?? DEFAULT_MAX_INPUT_LENGTH;
   const maxDepth = options.maxDepth ?? DEFAULT_MAX_DEPTH;
+  const entityLimits = {
+    maxEntityExpansions:
+      options.maxEntityExpansions ?? DEFAULT_MAX_ENTITY_EXPANSIONS,
+    maxExpandedLength: options.maxExpandedLength ?? DEFAULT_MAX_EXPANDED_LENGTH,
+  };
 
   if (svg.length > maxInputLength) {
     throw new SvgParseError(
@@ -67,6 +77,27 @@ export function parse(svg: string, options: ParseOptions = {}): SvgDocument {
     // saxes includes the whitespace after the DOCTYPE keyword, which
     // stringify() writes back as a single space.
     append({ type: "doctype", value: value.replace(LEADING_WHITESPACE, "") });
+
+    const declarations = parseEntityDeclarations(value, (message) => {
+      throw positionedError(parser, message, "MALFORMED_XML");
+    });
+    const resolve = createEntityResolver(
+      declarations,
+      entityLimits,
+      (message, code) => {
+        throw positionedError(parser, message, code);
+      },
+    );
+
+    // saxes looks up each entity reference in ENTITIES and inserts the
+    // result as text, so getters expand entities on use.
+    for (const name of declarations.keys()) {
+      Object.defineProperty(parser.ENTITIES, name, {
+        get: () => resolve(name),
+        enumerable: true,
+        configurable: true,
+      });
+    }
   });
 
   parser.on("processinginstruction", ({ target, body }) => {

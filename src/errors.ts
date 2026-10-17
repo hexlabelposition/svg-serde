@@ -26,6 +26,11 @@ export type SvgParseErrorCode =
    */
   | "EXTERNAL_ENTITY"
   /**
+   * A reference to an entity whose replacement text contains markup,
+   * such as `<!ENTITY e "<g/>">`. Only text replacements are supported.
+   */
+  | "UNSUPPORTED_ENTITY"
+  /**
    * The input is longer than `ParseOptions.maxInputLength`.
    */
   | "MAX_INPUT_LENGTH_EXCEEDED"

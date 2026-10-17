@@ -31,16 +31,19 @@
     "build": "tsdown",
     "typecheck": "tsc && tsc -p test",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prepublishOnly": "bun run typecheck && bun run test && bun run build"
   },
   "dependencies": {
     "saxes": "^6.0.0"
   },
   "devDependencies": {
+    "@arethetypeswrong/core": "^0.18.5",
     "@tabler/icons": "^3.49.0",
     "@types/node": "^22.20.5",
     "bootstrap-icons": "^1.13.2",
     "fast-check": "^4.10.2",
+    "publint": "^0.3.25",
     "simple-icons": "^16.35.0",
     "tsdown": "^0.23.1",
     "typescript": "^7.0.2",

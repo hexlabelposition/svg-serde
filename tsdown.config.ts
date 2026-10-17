@@ -8,6 +8,9 @@ const config: UserConfig = defineConfig({
   target: "es2022",
   exports: true,
   clean: true,
+  // Validate the package after each build.
+  publint: true,
+  attw: { profile: "esm-only", level: "error" },
 });
 
 export default config;

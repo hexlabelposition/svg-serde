@@ -46,10 +46,10 @@ Keep the public API small. Add features only when there is a clear use case.
 
 ```ts
 interface ParseOptions {
-  maxInputLength?: number;      // reject larger inputs before parsing
-  maxDepth?: number;            // maximum element nesting depth
+  maxInputLength?: number; // reject larger inputs before parsing
+  maxDepth?: number; // maximum element nesting depth
   maxEntityExpansions?: number; // maximum number of internal entity expansions
-  maxExpandedLength?: number;   // maximum total length of expanded entity text
+  maxExpandedLength?: number; // maximum total length of expanded entity text
 }
 ```
 
@@ -60,7 +60,7 @@ All limits have safe defaults. Exact default values are chosen by measuring a co
 ```ts
 interface StringifyOptions {
   pretty?: boolean; // default: false
-  indent?: number;  // default: 2, used only when pretty is true
+  indent?: number; // default: 2, used only when pretty is true
 }
 ```
 
@@ -70,12 +70,14 @@ interface StringifyOptions {
 
 ```ts
 class SvgParseError extends Error {
-  code: string;   // stable machine-readable code, e.g. "UNCLOSED_TAG", "MAX_DEPTH_EXCEEDED"
-  line: number;   // 1-based
+  code: string; // stable machine-readable code, e.g. "UNCLOSED_TAG", "MAX_DEPTH_EXCEEDED"
+  line: number; // 1-based
   column: number; // 1-based
   offset: number; // 0-based character offset
 }
 ```
+
+`stringify()` throws a `TypeError` when the tree cannot be written as well-formed XML: invalid names, invalid characters, a comment containing `--`, a processing instruction containing `?>`, or a document without exactly one root element. Such trees can only come from code that builds or edits the tree, never from `parse()`.
 
 ### Object model
 
@@ -126,7 +128,12 @@ interface SvgDoctype {
 }
 
 type SvgNode = SvgElement | SvgText | SvgCData | SvgComment | SvgInstruction;
-type SvgDocumentChild = SvgElement | SvgComment | SvgInstruction | SvgDoctype | SvgText;
+type SvgDocumentChild =
+  | SvgElement
+  | SvgComment
+  | SvgInstruction
+  | SvgDoctype
+  | SvgText;
 ```
 
 Model rules:
@@ -159,24 +166,24 @@ Compact output (`pretty: false`) serializes text nodes exactly as stored.
 
 ## Decisions
 
-| Topic | Decision |
-| --- | --- |
-| XML parser | `saxes` (strict XML, error positions, no external entity loading). The parser stays an internal detail and can be replaced without a breaking change. |
-| Document root | Separate `SvgDocument` root. |
-| CDATA, PI, DOCTYPE, XML declaration | Dedicated node types; the XML declaration is a `document.declaration` field. |
-| Internal entities | Expanded with limits; external entities rejected. |
-| Character references | Decoded on parse, minimally escaped on stringify. |
-| Whitespace | Preserved on parse; `pretty` only reformats element-only content. A `parse({ whitespace: "trim" })` option may be added on demand. |
-| Round-trip equivalence | See Quality Criteria. |
-| Namespaces | Qualified names as written, no URI resolution, undeclared prefixes rejected. |
-| Attribute order | Guaranteed via `Record<string, string>`. |
-| SVG typing | Autocomplete-only unions with `string & {}` fallback. |
-| Limits | Parse options with safe defaults. |
-| Errors | Single `SvgParseError` class with `code`, `line`, `column`, `offset`. |
-| Source positions on nodes | Not in the first release; positions only in errors. |
-| Runtimes | Node.js >= 22, Bun >= 1.2, browsers supporting ES2022 (build target ES2022). |
-| License | MIT. |
-| Versioning | `0.x` until the model is stable; breaking changes allowed in minor releases. After `1.0`, adding a node type is a major release because it breaks exhaustive `switch` statements in TypeScript. |
+| Topic                               | Decision                                                                                                                                                                                        |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| XML parser                          | `saxes` (strict XML, error positions, no external entity loading). The parser stays an internal detail and can be replaced without a breaking change.                                           |
+| Document root                       | Separate `SvgDocument` root.                                                                                                                                                                    |
+| CDATA, PI, DOCTYPE, XML declaration | Dedicated node types; the XML declaration is a `document.declaration` field.                                                                                                                    |
+| Internal entities                   | Expanded with limits; external entities rejected.                                                                                                                                               |
+| Character references                | Decoded on parse, minimally escaped on stringify.                                                                                                                                               |
+| Whitespace                          | Preserved on parse; `pretty` only reformats element-only content. A `parse({ whitespace: "trim" })` option may be added on demand.                                                              |
+| Round-trip equivalence              | See Quality Criteria.                                                                                                                                                                           |
+| Namespaces                          | Qualified names as written, no URI resolution, undeclared prefixes rejected.                                                                                                                    |
+| Attribute order                     | Guaranteed via `Record<string, string>`.                                                                                                                                                        |
+| SVG typing                          | Autocomplete-only unions with `string & {}` fallback.                                                                                                                                           |
+| Limits                              | Parse options with safe defaults.                                                                                                                                                               |
+| Errors                              | Single `SvgParseError` class with `code`, `line`, `column`, `offset`. `stringify()` throws `TypeError` for trees that cannot be written as well-formed XML.                                     |
+| Source positions on nodes           | Not in the first release; positions only in errors.                                                                                                                                             |
+| Runtimes                            | Node.js >= 22, Bun >= 1.2, browsers supporting ES2022 (build target ES2022).                                                                                                                    |
+| License                             | MIT.                                                                                                                                                                                            |
+| Versioning                          | `0.x` until the model is stable; breaking changes allowed in minor releases. After `1.0`, adding a node type is a major release because it breaks exhaustive `switch` statements in TypeScript. |
 
 ## Functional Requirements
 

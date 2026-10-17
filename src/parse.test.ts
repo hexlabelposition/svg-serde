@@ -226,6 +226,17 @@ describe("parse", () => {
       ]);
     });
 
+    test("keeps whitespace at the start of the document", () => {
+      expect(parse(" \r\n<svg/>").children).toEqual([
+        { type: "text", value: " \n" },
+        { type: "element", name: "svg", attributes: {}, children: [] },
+      ]);
+      expect(parse("\uFEFF\n<svg/>").children[0]).toEqual({
+        type: "text",
+        value: "\n",
+      });
+    });
+
     test("ignores a byte order mark", () => {
       expect(parse("\uFEFF<svg/>").children).toHaveLength(1);
     });
@@ -254,6 +265,13 @@ describe("parse", () => {
       ["<svg>&nbsp;</svg>", "UNDEFINED_ENTITY"],
     ])("rejects %j with %s", (svg, code) => {
       expect(parseError(svg).code).toBe(code);
+    });
+
+    test("rejects unpaired surrogates that saxes accepts", () => {
+      const error = parseError("<svg>\n<!--\uD835a--></svg>");
+      expect(error.code).toBe("MALFORMED_XML");
+      expect(error.message).toBe("Invalid character U+D835 (line 2, column 5)");
+      expect(error.offset).toBe(10);
     });
 
     test("reports the position", () => {

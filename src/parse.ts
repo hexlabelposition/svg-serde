@@ -10,6 +10,7 @@ import type {
   SvgNode,
   XmlDeclaration,
 } from "./types";
+import { INVALID_CHAR } from "./xml";
 
 /**
  * Default limits used by `parse()`.
@@ -49,8 +50,28 @@ export function parse(svg: string, options: ParseOptions = {}): SvgDocument {
     );
   }
 
+  // saxes accepts some characters that XML forbids, such as unpaired
+  // surrogates in comments, so check the whole input up front.
+  const invalidChar = INVALID_CHAR.exec(svg);
+  if (invalidChar !== null) {
+    const codePoint = invalidChar[0].codePointAt(0) ?? 0;
+    throw new SvgParseError(
+      `Invalid character U+${codePoint.toString(16).toUpperCase().padStart(4, "0")}`,
+      { code: "MALFORMED_XML", ...positionAt(svg, invalidChar.index) },
+    );
+  }
+
   const parser = new SaxesParser({ xmlns: true, position: true });
   const children: SvgDocumentChild[] = [];
+
+  // saxes skips whitespace at the start of the document without reporting it.
+  const leadingWhitespace = DOCUMENT_START_WHITESPACE.exec(svg)?.[1];
+  if (leadingWhitespace !== undefined) {
+    children.push({
+      type: "text",
+      value: leadingWhitespace.replace(LINE_BREAK, "\n"),
+    });
+  }
   let declaration: XmlDeclaration | undefined;
   const stack: SvgElement[] = [];
 
@@ -167,6 +188,8 @@ export function parse(svg: string, options: ParseOptions = {}): SvgDocument {
 }
 
 const LEADING_WHITESPACE = /^[ \t\r\n]+/;
+const DOCUMENT_START_WHITESPACE = /^\uFEFF?([ \t\r\n]+)/;
+const LINE_BREAK = /\r\n?/g;
 
 /**
  * saxes messages start with "line:column: " and end with a period.
@@ -204,4 +227,23 @@ function positionedError(
     offset: parser.position,
     cause,
   });
+}
+
+/**
+ * Computes the 1-based line and column of a character offset.
+ */
+function positionAt(
+  svg: string,
+  offset: number,
+): { line: number; column: number; offset: number } {
+  let line = 1;
+  let lineStart = 0;
+  for (let i = 0; i < offset; i++) {
+    const char = svg.charAt(i);
+    if (char === "\n" || (char === "\r" && svg.charAt(i + 1) !== "\n")) {
+      line++;
+      lineStart = i + 1;
+    }
+  }
+  return { line, column: offset - lineStart + 1, offset };
 }

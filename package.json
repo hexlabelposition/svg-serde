@@ -1,6 +1,6 @@
 {
   "name": "svg-serde",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Lightweight, type-safe SVG serialization and deserialization for JavaScript and TypeScript",
   "license": "MIT",
   "author": {

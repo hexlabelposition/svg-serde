@@ -29,7 +29,7 @@
   },
   "scripts": {
     "build": "tsdown",
-    "typecheck": "tsc",
+    "typecheck": "tsc && tsc -p test",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -37,7 +37,11 @@
     "saxes": "^6.0.0"
   },
   "devDependencies": {
+    "@tabler/icons": "^3.49.0",
+    "@types/node": "^22.20.5",
+    "bootstrap-icons": "^1.13.2",
     "fast-check": "^4.10.2",
+    "simple-icons": "^16.35.0",
     "tsdown": "^0.23.1",
     "typescript": "^7.0.2",
     "vitest": "^5.0.5"

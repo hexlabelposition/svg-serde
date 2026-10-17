@@ -1,0 +1,8 @@
+{
+  // Tests outside src may use Node.js APIs, e.g. to read corpus files.
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": ["."]
+}

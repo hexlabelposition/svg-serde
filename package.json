@@ -1,6 +1,7 @@
 {
   "name": "svg-serde",
-  "version": "0.0.0",
+  "version": "0.1.0",
+  "description": "Lightweight, type-safe SVG serialization and deserialization for JavaScript and TypeScript",
   "license": "MIT",
   "author": {
     "name": "Vladyslav Kudriashov",
@@ -15,6 +16,14 @@
     "ast",
     "round-trip"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hexlabelposition/svg-serde.git"
+  },
+  "homepage": "https://github.com/hexlabelposition/svg-serde#readme",
+  "bugs": {
+    "url": "https://github.com/hexlabelposition/svg-serde/issues"
+  },
   "type": "module",
   "exports": {
     ".": "./dist/index.js",

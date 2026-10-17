@@ -1,0 +1,38 @@
+{
+  "compilerOptions": {
+    // Environment: runtime-neutral ES2022, no DOM or Node.js globals
+    "lib": ["ES2022"],
+    "target": "ES2022",
+    "types": [],
+
+    // Modules: resolved and bundled by tsdown
+    "module": "Preserve",
+    "moduleResolution": "bundler",
+    "moduleDetection": "force",
+    "verbatimModuleSyntax": true,
+    "erasableSyntaxOnly": true,
+
+    // Output: type checking only, declarations are emitted by tsdown
+    "noEmit": true,
+    "declaration": true,
+    "isolatedDeclarations": true,
+
+    // Type safety
+    "strict": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": false,
+
+    // Code quality
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+
+    // Dependencies: skip checking third-party declaration files
+    "skipLibCheck": true
+  },
+  "include": ["src", "tsdown.config.ts"],
+  "exclude": ["node_modules", "dist"]
+}

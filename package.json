@@ -1,0 +1,41 @@
+{
+  "name": "svg-serde",
+  "version": "0.0.0",
+  "license": "MIT",
+  "author": {
+    "name": "Vladyslav Kudriashov",
+    "email": "hexlabelposition@gmail.com",
+    "url": "https://hexlabelposition.dev/"
+  },
+  "keywords": [
+    "svg",
+    "xml",
+    "parser",
+    "serializer",
+    "ast",
+    "round-trip"
+  ],
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "tsdown": "^0.23.1",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  }
+}

@@ -1,3 +1,4 @@
+export { parse } from "./parse";
 export { stringify } from "./stringify";
 export { SvgParseError } from "./errors";
 export type { SvgParseErrorCode, SvgParseErrorDetails } from "./errors";

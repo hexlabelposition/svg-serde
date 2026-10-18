@@ -14,13 +14,13 @@ export interface EntityLimits {
  */
 const MAX_ENTITY_NESTING = 64;
 
-const PREDEFINED_ENTITIES: Record<string, string> = {
-  lt: "<",
-  gt: ">",
-  amp: "&",
-  apos: "'",
-  quot: '"',
-};
+const PREDEFINED_ENTITIES: ReadonlyMap<string, string> = new Map([
+  ["lt", "<"],
+  ["gt", ">"],
+  ["amp", "&"],
+  ["apos", "'"],
+  ["quot", '"'],
+]);
 
 const CHAR_REFERENCE = /^#(?:x[0-9a-fA-F]+|[0-9]+)$/;
 
@@ -109,12 +109,13 @@ export function createEntityResolver(
         fail(`Malformed reference in entity: ${name}`, "MALFORMED_XML");
       }
 
+      const predefined = PREDEFINED_ENTITIES.get(reference);
       if (CHAR_REFERENCE.test(reference)) {
         text += charFromReference(reference, (message) =>
           fail(message, "MALFORMED_XML"),
         );
-      } else if (Object.hasOwn(PREDEFINED_ENTITIES, reference)) {
-        text += PREDEFINED_ENTITIES[reference];
+      } else if (predefined !== undefined) {
+        text += predefined;
       } else {
         const inner = expand(reference);
         text += inner.text;

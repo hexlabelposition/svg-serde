@@ -39,6 +39,9 @@
   "scripts": {
     "build": "tsdown",
     "generate": "bun scripts/generate-known-names.ts",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "typecheck": "tsc && tsc -p test && tsc -p scripts",
     "test": "vitest run --project node",
     "test:bun": "bun --bun vitest run --project node",
@@ -51,18 +54,24 @@
   },
   "devDependencies": {
     "@arethetypeswrong/core": "^0.18.5",
+    "@eslint/js": "^10.0.1",
     "@tabler/icons": "^3.49.0",
     "@types/node": "^22.20.5",
     "@vitest/browser-playwright": "^5.0.5",
     "bootstrap-icons": "^1.13.2",
+    "eslint": "^10.13.0",
+    "eslint-config-prettier": "^10.1.8",
     "fast-check": "^4.10.2",
+    "jiti": "^2.7.0",
     "playwright": "^1.64.1",
+    "prettier": "^3.9.10",
     "publint": "^0.3.25",
     "simple-icons": "^16.35.0",
     "svg-element-attributes": "^2.2.0",
     "svg-tag-names": "^3.0.1",
     "tsdown": "^0.23.1",
-    "typescript": "^7.0.2",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.71.2",
     "vitest": "^5.0.5"
   }
 }

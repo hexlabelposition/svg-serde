@@ -112,6 +112,8 @@ function stringifyDeclaration(declaration: XmlDeclaration): string {
   }
 
   if (standalone !== undefined) {
+    // Trees built at runtime may hold any value despite the type.
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (standalone !== "yes" && standalone !== "no") {
       throw new TypeError(
         `Invalid XML standalone value: ${JSON.stringify(standalone)}`,

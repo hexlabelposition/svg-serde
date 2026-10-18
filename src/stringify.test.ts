@@ -361,7 +361,7 @@ describe("stringify", () => {
 
     test("does not modify the document", () => {
       const document = svg({ type: "text", value: "a & b" });
-      const copy = JSON.parse(JSON.stringify(document));
+      const copy: unknown = JSON.parse(JSON.stringify(document));
       stringify(document);
       expect(document).toEqual(copy);
     });
@@ -447,17 +447,23 @@ describe("stringify", () => {
       );
     });
 
-    test.each(["text", "tspan", "textPath", "style", "script", "title", "desc"])(
-      "keeps content of <%s> unchanged",
-      (name) => {
-        expect(pretty(`<svg><${name}> <g> <a/> </g> </${name}></svg>`)).toBe(
-          `<svg>\n  <${name}> <g> <a/> </g> </${name}>\n</svg>`,
-        );
-      },
-    );
+    test.each([
+      "text",
+      "tspan",
+      "textPath",
+      "style",
+      "script",
+      "title",
+      "desc",
+    ])("keeps content of <%s> unchanged", (name) => {
+      expect(pretty(`<svg><${name}> <g> <a/> </g> </${name}></svg>`)).toBe(
+        `<svg>\n  <${name}> <g> <a/> </g> </${name}>\n</svg>`,
+      );
+    });
 
-    test("keeps content with xml:space=\"preserve\" unchanged", () => {
-      const source = '<svg><g xml:space="preserve"> <g> <rect/> </g> </g></svg>';
+    test('keeps content with xml:space="preserve" unchanged', () => {
+      const source =
+        '<svg><g xml:space="preserve"> <g> <rect/> </g> </g></svg>';
       expect(pretty(source)).toBe(
         '<svg>\n  <g xml:space="preserve"> <g> <rect/> </g> </g>\n</svg>',
       );

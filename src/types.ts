@@ -21,9 +21,8 @@ export type SvgElementName = KnownSvgElementName | (string & {});
  * `delete el.attributes.style`. Values are written back escaped as needed.
  * Standard SVG names are suggested by autocomplete, but any key is allowed.
  */
-export type SvgAttributes = { [name in KnownSvgAttributeName]?: string } & {
-  [name: string]: string;
-};
+export type SvgAttributes = Partial<Record<KnownSvgAttributeName, string>> &
+  Record<string, string>;
 
 /**
  * The `<?xml ...?>` declaration at the start of a document.
@@ -132,11 +131,7 @@ export interface SvgDoctype {
  * Switch on `type` to handle each kind of node.
  */
 export type SvgNode =
-  | SvgElement
-  | SvgText
-  | SvgCData
-  | SvgComment
-  | SvgInstruction;
+  SvgElement | SvgText | SvgCData | SvgComment | SvgInstruction;
 
 /**
  * A node that can appear at the top level of a document.
@@ -144,11 +139,7 @@ export type SvgNode =
  * Switch on `type` to handle each kind of node.
  */
 export type SvgDocumentChild =
-  | SvgElement
-  | SvgText
-  | SvgComment
-  | SvgInstruction
-  | SvgDoctype;
+  SvgElement | SvgText | SvgComment | SvgInstruction | SvgDoctype;
 
 /**
  * Options for `parse()`.

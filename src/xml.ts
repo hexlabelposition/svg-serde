@@ -7,6 +7,8 @@ const NAME_START_CHARS =
   "\\u3001-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFFD\\u{10000}-\\u{EFFFF}";
 const NAME_CHARS = `${NAME_START_CHARS}\\-.0-9\\u00B7\\u0300-\\u036F\\u203F-\\u2040`;
 export const NAME: RegExp = new RegExp(
+  // Combining characters U+0300 to U+036F are allowed in names by design.
+  // eslint-disable-next-line no-misleading-character-class
   `^[${NAME_START_CHARS}][${NAME_CHARS}]*$`,
   "u",
 );

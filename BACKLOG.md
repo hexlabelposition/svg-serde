@@ -129,11 +129,7 @@ interface SvgDoctype {
 
 type SvgNode = SvgElement | SvgText | SvgCData | SvgComment | SvgInstruction;
 type SvgDocumentChild =
-  | SvgElement
-  | SvgComment
-  | SvgInstruction
-  | SvgDoctype
-  | SvgText;
+  SvgElement | SvgComment | SvgInstruction | SvgDoctype | SvgText;
 ```
 
 Model rules:

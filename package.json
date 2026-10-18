@@ -38,7 +38,8 @@
   },
   "scripts": {
     "build": "tsdown",
-    "typecheck": "tsc && tsc -p test",
+    "generate": "bun scripts/generate-known-names.ts",
+    "typecheck": "tsc && tsc -p test && tsc -p scripts",
     "test": "vitest run",
     "test:watch": "vitest",
     "prepublishOnly": "bun run typecheck && bun run test && bun run build"
@@ -54,6 +55,8 @@
     "fast-check": "^4.10.2",
     "publint": "^0.3.25",
     "simple-icons": "^16.35.0",
+    "svg-element-attributes": "^2.2.0",
+    "svg-tag-names": "^3.0.1",
     "tsdown": "^0.23.1",
     "typescript": "^7.0.2",
     "vitest": "^5.0.5"

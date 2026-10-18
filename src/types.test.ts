@@ -1,5 +1,6 @@
-import { describe, expect, test } from "vitest";
-import type { SvgDocument } from "./types";
+import { describe, expect, expectTypeOf, test } from "vitest";
+import type { KnownSvgAttributeName, KnownSvgElementName } from "./known-names";
+import type { SvgAttributes, SvgDocument, SvgElementName } from "./types";
 
 const document = {
   type: "document",
@@ -29,5 +30,38 @@ describe("object model", () => {
   test("preserves attribute order", () => {
     const attributes: Record<string, string> = { y: "1", x: "2", "xlink:href": "#a", d: "M0 0" };
     expect(Object.keys(attributes)).toEqual(["y", "x", "xlink:href", "d"]);
+  });
+});
+
+describe("known names", () => {
+  test("include standard and namespace-qualified names", () => {
+    expectTypeOf<"linearGradient">().toExtend<KnownSvgElementName>();
+    expectTypeOf<"stroke-width">().toExtend<KnownSvgAttributeName>();
+    expectTypeOf<"xlink:href">().toExtend<KnownSvgAttributeName>();
+  });
+
+  test("do not restrict element names", () => {
+    expectTypeOf<"sodipodi:namedview">().toExtend<SvgElementName>();
+    expectTypeOf<SvgElementName>().toExtend<string>();
+  });
+
+  test("do not restrict attribute keys", () => {
+    const attributes: SvgAttributes = { fill: "red", "data-id": "1", "inkscape:label": "a" };
+    attributes.stroke = "blue";
+    delete attributes.fill;
+
+    expectTypeOf<SvgAttributes["stroke"]>().toEqualTypeOf<string | undefined>();
+    expectTypeOf<SvgAttributes["data-id"]>().toEqualTypeOf<string>();
+    expectTypeOf(Object.entries(attributes)).toEqualTypeOf<[string, string][]>();
+    expectTypeOf<SvgAttributes>().toExtend<Record<string, string>>();
+    expectTypeOf<Record<string, string>>().toExtend<SvgAttributes>();
+  });
+
+  test("require string attribute values", () => {
+    // @ts-expect-error Values must be strings.
+    const known: SvgAttributes = { width: 10 };
+    // @ts-expect-error Values must be strings.
+    const unknown: SvgAttributes = { "data-width": 10 };
+    expect([known, unknown]).toHaveLength(2);
   });
 });

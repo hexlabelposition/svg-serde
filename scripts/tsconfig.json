@@ -1,0 +1,8 @@
+{
+  // Scripts run in Bun or Node.js and may use Node.js APIs.
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": ["."]
+}

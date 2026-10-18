@@ -15,6 +15,8 @@
         "fast-check": "^4.10.2",
         "publint": "^0.3.25",
         "simple-icons": "^16.35.0",
+        "svg-element-attributes": "^2.2.0",
+        "svg-tag-names": "^3.0.1",
         "tsdown": "^0.23.1",
         "typescript": "^7.0.2",
         "vitest": "^5.0.5",
@@ -257,6 +259,10 @@
     "source-map-js": ["source-map-js@1.2.2", "", {}, "sha512-KGj/8Y43x35aZVDtt+J4mK1hoLGHULMYfSkODJNQjNDC3oW1PqPoxMwo0pLUsWM/UEGzON/NxeHywEfNXNP3Vw=="],
 
     "std-env": ["std-env@4.3.0", "", {}, "sha512-OtU/EgQ1kIm5KwqQpBC6ZEMXrZRui11w8zgfTWp8cdO9B8OaPsbA8bTHO2P+HNo1VlUTGMVBwPhydu6poeXiag=="],
+
+    "svg-element-attributes": ["svg-element-attributes@2.2.0", "", {}, "sha512-t/7bOuynnY9XNkGAiMFq7nNsSqzoBQj4PZ1luVaSE1l2iZqAb1HctffddeQcKbXgYtBcHuzp6oauj5FWwo/mOw=="],
+
+    "svg-tag-names": ["svg-tag-names@3.0.1", "", {}, "sha512-R5EDS44RQSOwwKIOOUZLKZggMeFL8fDSSZr1hVK5Z0KkyuGVOZfyepBZDkPu/aoL+hSOysxxvAk8uN4yN2LOMQ=="],
 
     "tinybench": ["tinybench@6.2.2", "", {}, "sha512-nIZ2N2dFpjBsg2hgitKu7mA+FvsIJuGJOwysRngmVRRmWgR/UyPjwJj8c/fT/dhm8EkHnF5EOogRf+0Z2qrimA=="],
 

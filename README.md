@@ -149,8 +149,8 @@ interface SvgDocument {
 
 interface SvgElement {
   type: "element";
-  name: string; // as written, including prefixes: "svg", "xlink:href", "inkscape:label"
-  attributes: Record<string, string>; // in source order
+  name: SvgElementName; // as written, including prefixes: "svg", "sodipodi:namedview"
+  attributes: SvgAttributes; // in source order, keys like "fill" or "xlink:href"
   children: SvgNode[];
 }
 
@@ -170,6 +170,8 @@ type SvgDocumentChild =
 ```
 
 The tree is JSON-safe: no classes, no cycles, and no parent references.
+
+`SvgElementName` and the keys of `SvgAttributes` accept any string, but your editor suggests standard SVG element and attribute names. The lists of standard names are exported as `KnownSvgElementName` and `KnownSvgAttributeName`.
 
 Attribute values are intentionally represented as strings:
 
@@ -269,7 +271,7 @@ These tasks can be handled by separate libraries without making `svg-serde` depe
 
 ## Project status
 
-`parse()` and `stringify()` are implemented and tested with unit tests, property-based tests, and more than 11,000 real-world icons. Next steps include typed SVG element and attribute names, and testing in Bun and browsers.
+`parse()` and `stringify()` are implemented and tested with unit tests, property-based tests, and more than 11,000 real-world icons. Next steps include testing in Bun and browsers.
 
 See [BACKLOG.md](./BACKLOG.md) for planned functionality, priorities, quality criteria, and design decisions.
 

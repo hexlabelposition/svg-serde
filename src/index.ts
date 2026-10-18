@@ -2,6 +2,7 @@ export { parse } from "./parse";
 export { stringify } from "./stringify";
 export { SvgParseError } from "./errors";
 export type { SvgParseErrorCode, SvgParseErrorDetails } from "./errors";
+export type { KnownSvgAttributeName, KnownSvgElementName } from "./known-names";
 export type {
   ParseOptions,
   StringifyOptions,

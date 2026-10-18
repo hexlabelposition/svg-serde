@@ -207,7 +207,7 @@ Compact output (`pretty: false`) serializes text nodes exactly as stored.
 
 ### P1: Developer experience and quality
 
-- [ ] Generate `KnownSvgElementName` and known attribute types from `svg-tag-names` and `svg-element-attributes` at build time.
+- [x] Generate `KnownSvgElementName` and known attribute types from `svg-tag-names` and `svg-element-attributes` at build time.
 - [x] Implement `pretty` and `indent` according to the formatting rules.
 - [ ] Choose default limit values based on measurements of the test corpus.
 - [x] Document which lexical details are preserved or normalized: quote style, whitespace, entity references, and attribute order.

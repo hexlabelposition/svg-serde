@@ -83,11 +83,24 @@ const instructionNode: fc.Arbitrary<SvgInstruction> = fc.record({
     .filter((value) => !value.includes("?>") && !/^[ \t\n]/.test(value)),
 });
 
-const attributes = fc.dictionary(
-  qualifiedName,
-  fc.string({ unit: char, maxLength: 12 }),
-  { maxKeys: 4 },
+/**
+ * Element names include ones whose content `pretty` never reformats.
+ */
+const elementName = fc.oneof(
+  { weight: 6, arbitrary: qualifiedName },
+  { weight: 1, arbitrary: fc.constantFrom("g", "text", "style") },
 );
+
+const attributes = fc
+  .tuple(
+    fc.dictionary(qualifiedName, fc.string({ unit: char, maxLength: 12 }), {
+      maxKeys: 4,
+    }),
+    fc.option(fc.constantFrom("preserve", "default"), { freq: 8 }),
+  )
+  .map(([attributes, space]) =>
+    space === null ? attributes : { ...attributes, "xml:space": space },
+  );
 
 const { element } = fc.letrec<{ node: SvgNode; element: SvgElement }>(
   (tie) => ({
@@ -102,7 +115,7 @@ const { element } = fc.letrec<{ node: SvgNode; element: SvgElement }>(
     ),
     element: fc.record({
       type: fc.constant("element"),
-      name: qualifiedName,
+      name: elementName,
       attributes,
       children: fc.array(tie("node"), { maxLength: 5 }),
     }),
@@ -178,6 +191,51 @@ function normalizeDocument(document: SvgDocument): SvgDocument {
   return { ...document, children: normalize(document.children) };
 }
 
+const WHITESPACE = /^[ \t\r\n]*$/;
+
+const TEXT_ELEMENTS = new Set([
+  "text",
+  "tspan",
+  "textPath",
+  "style",
+  "script",
+  "title",
+  "desc",
+]);
+
+/**
+ * Removes whitespace-only text nodes from element-only content, which pretty
+ * output replaces with its own formatting. `nodes` must be normalized.
+ */
+function stripFormatting<T extends SvgNode | SvgDocumentChild>(
+  nodes: T[],
+): T[] {
+  return nodes
+    .filter((node) => node.type !== "text" || !WHITESPACE.test(node.value))
+    .map((node) =>
+      node.type === "element" && isElementOnly(node)
+        ? { ...node, children: stripFormatting(node.children) }
+        : node,
+    );
+}
+
+function isElementOnly(element: SvgElement): boolean {
+  return (
+    !TEXT_ELEMENTS.has(element.name) &&
+    element.attributes["xml:space"] !== "preserve" &&
+    element.children.every(
+      (child) =>
+        child.type !== "cdata" &&
+        (child.type !== "text" || WHITESPACE.test(child.value)),
+    )
+  );
+}
+
+function stripDocumentFormatting(document: SvgDocument): SvgDocument {
+  const { children } = normalizeDocument(document);
+  return { ...document, children: stripFormatting(children) };
+}
+
 /**
  * Markup fragments that steer random strings toward interesting parser states.
  */
@@ -237,6 +295,19 @@ describe("properties", () => {
     fc.assert(
       fc.property(documentArbitrary, (document) => {
         expect(parse(stringify(document))).toEqual(normalizeDocument(document));
+      }),
+      { numRuns: 1000 },
+    );
+  });
+
+  test("pretty output parses to the document up to formatting whitespace", () => {
+    fc.assert(
+      fc.property(documentArbitrary, fc.nat(4), (document, indent) => {
+        const output = stringify(document, { pretty: true, indent });
+        expect(stripDocumentFormatting(parse(output))).toEqual(
+          stripDocumentFormatting(document),
+        );
+        expect(stringify(parse(output), { pretty: true, indent })).toBe(output);
       }),
       { numRuns: 1000 },
     );

@@ -1,6 +1,12 @@
 import { describe, expect, test } from "vitest";
+import { parse } from "./parse";
 import { stringify } from "./stringify";
-import type { SvgDocument, SvgDocumentChild, SvgNode } from "./types";
+import type {
+  StringifyOptions,
+  SvgDocument,
+  SvgDocumentChild,
+  SvgNode,
+} from "./types";
 
 function svg(...children: SvgNode[]): SvgDocument {
   return {
@@ -358,6 +364,109 @@ describe("stringify", () => {
       const copy = JSON.parse(JSON.stringify(document));
       stringify(document);
       expect(document).toEqual(copy);
+    });
+  });
+
+  describe("pretty", () => {
+    function pretty(source: string, options: StringifyOptions = {}): string {
+      return stringify(parse(source), { pretty: true, ...options });
+    }
+
+    test("indents element-only content", () => {
+      expect(pretty('<svg><g id="a"><rect/><circle/></g><path/></svg>')).toBe(
+        [
+          "<svg>",
+          '  <g id="a">',
+          "    <rect/>",
+          "    <circle/>",
+          "  </g>",
+          "  <path/>",
+          "</svg>",
+        ].join("\n"),
+      );
+    });
+
+    test("replaces existing whitespace between elements", () => {
+      expect(pretty("<svg>\n\t<g>   <rect/>\n</g>\n\n</svg>")).toBe(
+        "<svg>\n  <g>\n    <rect/>\n  </g>\n</svg>",
+      );
+    });
+
+    test("writes elements with only whitespace as self-closing", () => {
+      expect(pretty("<svg><g>\n  </g></svg>")).toBe("<svg>\n  <g/>\n</svg>");
+    });
+
+    test("puts comments and processing instructions on their own lines", () => {
+      expect(pretty("<svg><!-- a --><?pi b?><rect/></svg>")).toBe(
+        "<svg>\n  <!-- a -->\n  <?pi b?>\n  <rect/>\n</svg>",
+      );
+    });
+
+    test("uses the indent option", () => {
+      expect(pretty("<svg><g><rect/></g></svg>", { indent: 4 })).toBe(
+        "<svg>\n    <g>\n        <rect/>\n    </g>\n</svg>",
+      );
+      expect(pretty("<svg><g><rect/></g></svg>", { indent: 0 })).toBe(
+        "<svg>\n<g>\n<rect/>\n</g>\n</svg>",
+      );
+    });
+
+    test("ignores indent without pretty", () => {
+      const document = parse("<svg> <rect/> </svg>");
+      expect(stringify(document, { indent: 4 })).toBe("<svg> <rect/> </svg>");
+    });
+
+    test.each([-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY])(
+      "rejects indent %d",
+      (indent) => {
+        expect(() => pretty("<svg/>", { indent })).toThrow(RangeError);
+      },
+    );
+
+    test("puts top-level nodes on separate lines", () => {
+      const source =
+        '<?xml version="1.0"?>\n<!-- a -->\n\n<!DOCTYPE svg>  <svg><rect/></svg>\n<!-- b -->\n';
+      expect(pretty(source)).toBe(
+        [
+          '<?xml version="1.0"?>',
+          "<!-- a -->",
+          "<!DOCTYPE svg>",
+          "<svg>",
+          "  <rect/>",
+          "</svg>",
+          "<!-- b -->",
+        ].join("\n"),
+      );
+    });
+
+    test("keeps mixed content and its descendants unchanged", () => {
+      const source =
+        "<svg><foreignObject><p>Hello <b> <i>world</i> </b></p></foreignObject></svg>";
+      expect(pretty(source)).toBe(
+        "<svg>\n  <foreignObject>\n    <p>Hello <b> <i>world</i> </b></p>\n  </foreignObject>\n</svg>",
+      );
+    });
+
+    test.each(["text", "tspan", "textPath", "style", "script", "title", "desc"])(
+      "keeps content of <%s> unchanged",
+      (name) => {
+        expect(pretty(`<svg><${name}> <g> <a/> </g> </${name}></svg>`)).toBe(
+          `<svg>\n  <${name}> <g> <a/> </g> </${name}>\n</svg>`,
+        );
+      },
+    );
+
+    test("keeps content with xml:space=\"preserve\" unchanged", () => {
+      const source = '<svg><g xml:space="preserve"> <g> <rect/> </g> </g></svg>';
+      expect(pretty(source)).toBe(
+        '<svg>\n  <g xml:space="preserve"> <g> <rect/> </g> </g>\n</svg>',
+      );
+    });
+
+    test("keeps elements with CDATA unchanged", () => {
+      expect(pretty("<svg><g> <![CDATA[a]]> </g></svg>")).toBe(
+        "<svg>\n  <g> <![CDATA[a]]> </g>\n</svg>",
+      );
     });
   });
 });

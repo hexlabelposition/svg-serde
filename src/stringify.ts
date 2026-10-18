@@ -4,6 +4,7 @@ import type {
   SvgElement,
   SvgInstruction,
   SvgNode,
+  StringifyOptions,
   XmlDeclaration,
 } from "./types";
 import { INVALID_CHAR, NAME } from "./xml";
@@ -11,19 +12,26 @@ import { INVALID_CHAR, NAME } from "./xml";
 /**
  * Serializes a document to an SVG string.
  *
- * Output is compact: no whitespace is added or removed, so text nodes are
- * written exactly as stored. Strings are escaped only where XML requires it,
+ * By default, output is compact: no whitespace is added or removed, so text
+ * nodes are written exactly as stored. With `pretty`, whitespace-only text in
+ * element-only content is replaced with line breaks and indentation; text
+ * content is never changed. Strings are escaped only where XML requires it,
  * attributes always use double quotes, and elements without children are
  * self-closing.
  *
  * Throws a `TypeError` when the tree cannot be written as well-formed XML,
- * for example an invalid element name or a comment containing `--`.
+ * for example an invalid element name or a comment containing `--`, and a
+ * `RangeError` when `indent` is not a non-negative integer.
  */
-export function stringify(document: SvgDocument): string {
-  let output = "";
+export function stringify(
+  document: SvgDocument,
+  options: StringifyOptions = {},
+): string {
+  const indent = options.pretty === true ? resolveIndent(options) : undefined;
+  const parts: string[] = [];
 
   if (document.declaration !== undefined) {
-    output += stringifyDeclaration(document.declaration);
+    parts.push(stringifyDeclaration(document.declaration));
   }
 
   let hasRoot = false;
@@ -36,7 +44,7 @@ export function stringify(document: SvgDocument): string {
           throw new TypeError("A document must have exactly one root element");
         }
         hasRoot = true;
-        output += stringifyElement(child);
+        parts.push(stringifyElement(child, indent, ""));
         break;
       case "doctype":
         if (hasDoctype || hasRoot) {
@@ -46,7 +54,7 @@ export function stringify(document: SvgDocument): string {
         }
         hasDoctype = true;
         assertChars(child.value, "DOCTYPE");
-        output += `<!DOCTYPE ${child.value}>`;
+        parts.push(`<!DOCTYPE ${child.value}>`);
         break;
       case "text":
         // Character references are not allowed outside the root element,
@@ -56,13 +64,15 @@ export function stringify(document: SvgDocument): string {
             `Text outside the root element must be whitespace: ${JSON.stringify(child.value)}`,
           );
         }
-        output += child.value;
+        if (indent === undefined) {
+          parts.push(child.value);
+        }
         break;
       case "comment":
-        output += stringifyComment(child);
+        parts.push(stringifyComment(child));
         break;
       case "instruction":
-        output += stringifyInstruction(child);
+        parts.push(stringifyInstruction(child));
         break;
       default:
         throw unknownNode(child);
@@ -73,7 +83,17 @@ export function stringify(document: SvgDocument): string {
     throw new TypeError("A document must have exactly one root element");
   }
 
-  return output;
+  return parts.join(indent === undefined ? "" : "\n");
+}
+
+function resolveIndent(options: StringifyOptions): string {
+  const indent = options.indent ?? 2;
+  if (!Number.isInteger(indent) || indent < 0) {
+    throw new RangeError(
+      `indent must be a non-negative integer: ${String(indent)}`,
+    );
+  }
+  return " ".repeat(indent);
 }
 
 function stringifyDeclaration(declaration: XmlDeclaration): string {
@@ -103,10 +123,18 @@ function stringifyDeclaration(declaration: XmlDeclaration): string {
   return `${output}?>`;
 }
 
-function stringifyNode(node: SvgNode): string {
+/**
+ * `indent` is the indentation step when formatting, or `undefined` for
+ * compact output; `prefix` is the indentation of the current line.
+ */
+function stringifyNode(
+  node: SvgNode,
+  indent: string | undefined,
+  prefix: string,
+): string {
   switch (node.type) {
     case "element":
-      return stringifyElement(node);
+      return stringifyElement(node, indent, prefix);
     case "text":
       assertChars(node.value, "text");
       return node.value.replace(TEXT_SPECIAL_CHARS, escapeChar);
@@ -124,7 +152,11 @@ function stringifyNode(node: SvgNode): string {
   }
 }
 
-function stringifyElement(element: SvgElement): string {
+function stringifyElement(
+  element: SvgElement,
+  indent: string | undefined,
+  prefix: string,
+): string {
   assertName(element.name, "element");
   let output = `<${element.name}`;
 
@@ -134,15 +166,48 @@ function stringifyElement(element: SvgElement): string {
     output += ` ${name}="${value.replace(ATTRIBUTE_SPECIAL_CHARS, escapeChar)}"`;
   }
 
+  if (indent !== undefined && isElementOnly(element)) {
+    // Whitespace-only text is replaced by the formatting below.
+    const children = element.children.filter((child) => child.type !== "text");
+    if (children.length === 0) {
+      return `${output}/>`;
+    }
+
+    output += ">";
+    const childPrefix = prefix + indent;
+    for (const child of children) {
+      output += `\n${childPrefix}${stringifyNode(child, indent, childPrefix)}`;
+    }
+    return `${output}\n${prefix}</${element.name}>`;
+  }
+
   if (element.children.length === 0) {
     return `${output}/>`;
   }
 
+  // Content that is not reformatted keeps its descendants compact as well,
+  // since whitespace inside them can be significant too.
   output += ">";
   for (const child of element.children) {
-    output += stringifyNode(child);
+    output += stringifyNode(child, undefined, prefix);
   }
   return `${output}</${element.name}>`;
+}
+
+/**
+ * Whether whitespace in an element's content is insignificant, so that
+ * `pretty` can replace it.
+ */
+function isElementOnly(element: SvgElement): boolean {
+  return (
+    !TEXT_ELEMENTS.has(element.name) &&
+    element.attributes["xml:space"] !== "preserve" &&
+    element.children.every(
+      (child) =>
+        child.type !== "cdata" &&
+        (child.type !== "text" || WHITESPACE.test(child.value)),
+    )
+  );
 }
 
 function stringifyComment(comment: SvgComment): string {
@@ -176,6 +241,19 @@ function stringifyInstruction(instruction: SvgInstruction): string {
 }
 
 const WHITESPACE = /^[ \t\r\n]*$/;
+
+/**
+ * Elements whose content is text, where `pretty` never changes whitespace.
+ */
+const TEXT_ELEMENTS: ReadonlySet<string> = new Set([
+  "text",
+  "tspan",
+  "textPath",
+  "style",
+  "script",
+  "title",
+  "desc",
+]);
 const VERSION = /^1\.[0-9]+$/;
 const ENCODING = /^[A-Za-z][A-Za-z0-9._-]*$/;
 

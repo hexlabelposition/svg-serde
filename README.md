@@ -111,7 +111,26 @@ const result = stringify(document);
 
 ### Format output
 
-Formatted output with `pretty` and `indent` options is planned for a later release. `stringify()` currently writes compact output that keeps all whitespace as parsed.
+By default, `stringify()` writes compact output that keeps all whitespace as parsed. Pass `pretty` to put each element on its own line, indented by `indent` spaces (default `2`):
+
+```ts
+stringify(parse('<svg><g><rect/><circle/></g></svg>'), { pretty: true });
+```
+
+```xml
+<svg>
+  <g>
+    <rect/>
+    <circle/>
+  </g>
+</svg>
+```
+
+Formatting only replaces whitespace between elements; text is never changed. Content stays exactly as stored, including nested elements, inside:
+
+- elements that contain text or CDATA, such as `<p>Hello <b>world</b></p>` in a `<foreignObject>`
+- `<text>`, `<tspan>`, `<textPath>`, `<style>`, `<script>`, `<title>`, and `<desc>`
+- elements with `xml:space="preserve"`
 
 ## Object model
 
@@ -250,7 +269,7 @@ These tasks can be handled by separate libraries without making `svg-serde` depe
 
 ## Project status
 
-`parse()` and `stringify()` are implemented and tested with unit tests, property-based tests, and more than 11,000 real-world icons. Next steps include formatted output, typed SVG element and attribute names, and testing in Bun and browsers.
+`parse()` and `stringify()` are implemented and tested with unit tests, property-based tests, and more than 11,000 real-world icons. Next steps include typed SVG element and attribute names, and testing in Bun and browsers.
 
 See [BACKLOG.md](./BACKLOG.md) for planned functionality, priorities, quality criteria, and design decisions.
 

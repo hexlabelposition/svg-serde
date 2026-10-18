@@ -40,6 +40,11 @@ function check(source: string): string | undefined {
   if (stringify(parse(output)) !== output) {
     return "stringify output is not stable";
   }
+
+  const pretty = stringify(document, { pretty: true });
+  if (stringify(parse(pretty), { pretty: true }) !== pretty) {
+    return "pretty stringify output is not stable";
+  }
   return undefined;
 }
 

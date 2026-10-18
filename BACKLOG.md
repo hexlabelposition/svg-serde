@@ -189,28 +189,28 @@ Compact output (`pretty: false`) serializes text nodes exactly as stored.
 
 ### P0: Core functionality
 
-- [ ] Document the exact behavior of `parse()` and `stringify()` according to the decisions above.
-- [ ] Integrate `saxes`; review its size, license, and dependencies (`xmlchars`).
-- [ ] Implement the object model types, including `XmlDeclaration`, `cdata`, `instruction`, and `doctype` nodes.
-- [ ] Implement `parse(svg, options?)` with XML well-formedness and namespace prefix validation.
-- [ ] Parse the DOCTYPE internal subset and expand internal entities within limits; reject external entities.
-- [ ] Implement `maxInputLength`, `maxDepth`, `maxEntityExpansions`, and `maxExpandedLength` with safe defaults.
-- [ ] Implement `SvgParseError` with stable error codes and line, column, and offset information.
-- [ ] Implement `stringify(document, options?)` with minimal, correct XML escaping.
-- [ ] Preserve element hierarchy, child order, mixed text content, and whitespace-only text nodes.
-- [ ] Preserve attribute values, order, casing, prefixes, and unknown attributes without implicit normalization.
-- [ ] Write round-trip tests that check the equivalence rules from Quality Criteria.
-- [ ] Add property-based round-trip tests with `fast-check`.
+- [x] Document the exact behavior of `parse()` and `stringify()` according to the decisions above.
+- [x] Integrate `saxes`; review its size, license, and dependencies (`xmlchars`).
+- [x] Implement the object model types, including `XmlDeclaration`, `cdata`, `instruction`, and `doctype` nodes.
+- [x] Implement `parse(svg, options?)` with XML well-formedness and namespace prefix validation.
+- [x] Parse the DOCTYPE internal subset and expand internal entities within limits; reject external entities.
+- [x] Implement `maxInputLength`, `maxDepth`, `maxEntityExpansions`, and `maxExpandedLength` with safe defaults.
+- [x] Implement `SvgParseError` with stable error codes and line, column, and offset information.
+- [x] Implement `stringify(document, options?)` with minimal, correct XML escaping.
+- [x] Preserve element hierarchy, child order, mixed text content, and whitespace-only text nodes.
+- [x] Preserve attribute values, order, casing, prefixes, and unknown attributes without implicit normalization.
+- [x] Write round-trip tests that check the equivalence rules from Quality Criteria.
+- [x] Add property-based round-trip tests with `fast-check`.
 - [ ] Build a test corpus of real-world files: Inkscape, Adobe Illustrator, and Figma exports, icon sets, and SVGO test fixtures (respecting their licenses).
-- [ ] Configure ESM output, `.d.ts` files, package `exports`, npm `files`, and the publishing workflow.
-- [ ] Add the MIT `LICENSE` file.
+- [x] Configure ESM output, `.d.ts` files, package `exports`, npm `files`, and the publishing workflow.
+- [x] Add the MIT `LICENSE` file.
 
 ### P1: Developer experience and quality
 
 - [ ] Generate `KnownSvgElementName` and known attribute types from `svg-tag-names` and `svg-element-attributes` at build time.
-- [ ] Implement `pretty` and `indent` according to the formatting rules.
+- [x] Implement `pretty` and `indent` according to the formatting rules.
 - [ ] Choose default limit values based on measurements of the test corpus.
-- [ ] Document which lexical details are preserved or normalized: quote style, whitespace, entity references, and attribute order.
+- [x] Document which lexical details are preserved or normalized: quote style, whitespace, entity references, and attribute order.
 - [ ] Document the versioning and stability policy.
 - [ ] Provide examples of modifying parsed objects before serializing them.
 - [ ] Write a README covering installation, API, supported environments, limitations, comparison with alternatives, and examples.

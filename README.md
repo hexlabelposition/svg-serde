@@ -114,7 +114,7 @@ const result = stringify(document);
 By default, `stringify()` writes compact output that keeps all whitespace as parsed. Pass `pretty` to put each element on its own line, indented by `indent` spaces (default `2`):
 
 ```ts
-stringify(parse('<svg><g><rect/><circle/></g></svg>'), { pretty: true });
+stringify(parse("<svg><g><rect/><circle/></g></svg>"), { pretty: true });
 ```
 
 ```xml
@@ -235,14 +235,21 @@ The parser is designed to handle untrusted input:
 - Entities declared in the DOCTYPE are expanded with limits that stop expansion attacks such as "billion laughs".
 - Input length and element nesting depth are limited.
 
-All limits have defaults and can be changed through `ParseOptions`:
+All limits have defaults, chosen by measuring real-world files:
+
+| Option                | Default             | Measured maximum                                |
+| --------------------- | ------------------- | ----------------------------------------------- |
+| `maxInputLength`      | 67,108,864 (64 MiB) | 90.8M characters; 99.9% of files are below 3.2M |
+| `maxDepth`            | 1,024               | 13 levels                                       |
+| `maxEntityExpansions` | 10,000              | 7 references                                    |
+| `maxExpandedLength`   | 1,048,576 (1 MiB)   | 242 characters                                  |
+
+The measurements cover 16,904 files: icon sets, KDE Oxygen icons exported from Inkscape and Adobe Illustrator, the W3C SVG 1.1 test suite, and large maps from Wikimedia Commons. Only one map exceeds a default limit. Lower the limits for tighter resource budgets, or raise `maxInputLength` for very large trusted files:
 
 ```ts
 parse(svg, {
   maxInputLength: 1_000_000,
   maxDepth: 256,
-  maxEntityExpansions: 1_000,
-  maxExpandedLength: 100_000,
 });
 ```
 

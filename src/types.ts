@@ -160,20 +160,24 @@ export type SvgDocumentChild =
 export interface ParseOptions {
   /**
    * Maximum input length in characters, checked before parsing.
+   * Defaults to 67,108,864 (64 MiB).
    */
   maxInputLength?: number;
   /**
    * Maximum element nesting depth. Protects against stack exhaustion.
+   * Defaults to 1,024.
    */
   maxDepth?: number;
   /**
    * Maximum number of internal entity references expanded in a document.
    * Protects against entity expansion attacks ("billion laughs").
+   * Defaults to 10,000.
    */
   maxEntityExpansions?: number;
   /**
    * Maximum total length of text produced by entity expansion.
    * Protects against entity expansion attacks ("billion laughs").
+   * Defaults to 1,048,576 (1 MiB).
    */
   maxExpandedLength?: number;
 }

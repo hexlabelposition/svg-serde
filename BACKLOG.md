@@ -207,11 +207,11 @@ Compact output (`pretty: false`) serializes text nodes exactly as stored.
 - [x] Implement `pretty` and `indent` according to the formatting rules.
 - [x] Choose default limit values based on measurements of the test corpus.
 - [x] Document which lexical details are preserved or normalized: quote style, whitespace, entity references, and attribute order.
-- [ ] Document the versioning and stability policy.
-- [ ] Provide examples of modifying parsed objects before serializing them.
-- [ ] Write a README covering installation, API, supported environments, limitations, comparison with alternatives, and examples.
-- [ ] Test the library in Node.js 22+, Bun 1.2+, and a browser environment.
-- [ ] Configure CI for linting, type checking, tests, builds, and package validation.
+- [x] Document the versioning and stability policy.
+- [x] Provide examples of modifying parsed objects before serializing them.
+- [x] Write a README covering installation, API, supported environments, limitations, comparison with alternatives, and examples.
+- [x] Test the library in Node.js 22+, Bun 1.2+, and a browser environment.
+- [x] Configure CI for linting, type checking, tests, builds, and package validation.
 
 ### P2: Future considerations
 

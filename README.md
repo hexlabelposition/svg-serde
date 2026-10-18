@@ -1,6 +1,7 @@
 # svg-serde
 
 [![npm version](https://img.shields.io/npm/v/svg-serde)](https://www.npmjs.com/package/svg-serde)
+[![CI](https://github.com/hexlabelposition/svg-serde/actions/workflows/ci.yml/badge.svg)](https://github.com/hexlabelposition/svg-serde/actions/workflows/ci.yml)
 [![Release](https://github.com/hexlabelposition/svg-serde/actions/workflows/release.yml/badge.svg)](https://github.com/hexlabelposition/svg-serde/actions/workflows/release.yml)
 [![Types](https://img.shields.io/npm/types/svg-serde)](https://www.npmjs.com/package/svg-serde)
 [![License](https://img.shields.io/npm/l/svg-serde)](./LICENSE)
@@ -132,6 +133,111 @@ Formatting only replaces whitespace between elements; text is never changed. Con
 - `<text>`, `<tspan>`, `<textPath>`, `<style>`, `<script>`, `<title>`, and `<desc>`
 - elements with `xml:space="preserve"`
 
+## Examples
+
+The tree is plain data, so changes are ordinary JavaScript: assign or `delete` attributes, and add, remove, or reorder `children`. A small generator makes it easy to visit every element:
+
+```ts
+import type { SvgDocument, SvgElement, SvgNode } from "svg-serde";
+
+function* elements(node: SvgDocument | SvgNode): Generator<SvgElement> {
+  if (node.type === "element") {
+    yield node;
+  }
+  if (node.type === "element" || node.type === "document") {
+    for (const child of node.children) {
+      if (child.type === "element") {
+        yield* elements(child);
+      }
+    }
+  }
+}
+```
+
+### Recolor an icon
+
+```ts
+const document = parse(svg);
+
+for (const element of elements(document)) {
+  if (element.attributes.fill === "#000") {
+    element.attributes.fill = "currentColor";
+  }
+}
+
+stringify(document);
+```
+
+### Remove comments and editor metadata
+
+```ts
+const isEditorName = (name: string) =>
+  /^(xmlns:)?(inkscape|sodipodi)(:|$)/.test(name);
+
+for (const element of elements(document)) {
+  element.children = element.children.filter(
+    (child) =>
+      child.type !== "comment" &&
+      !(child.type === "element" && isEditorName(child.name)),
+  );
+  for (const name of Object.keys(element.attributes)) {
+    if (isEditorName(name)) {
+      delete element.attributes[name];
+    }
+  }
+}
+```
+
+The generator visits children after their parent, so removed elements are never visited.
+
+### Add an accessible title
+
+```ts
+const svg = document.children.find((node) => node.type === "element");
+
+if (svg) {
+  svg.attributes.role = "img";
+  svg.children.unshift({
+    type: "element",
+    name: "title",
+    attributes: {},
+    children: [{ type: "text", value: "Home & garden" }],
+  });
+}
+
+stringify(document);
+// <svg role="img"><title>Home &amp; garden</title>...</svg>
+```
+
+Text and attribute values are stored unescaped; `stringify()` escapes them.
+
+### Build a document from scratch
+
+```ts
+import { stringify, type SvgDocument } from "svg-serde";
+
+const document: SvgDocument = {
+  type: "document",
+  children: [
+    {
+      type: "element",
+      name: "svg",
+      attributes: { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 10 10" },
+      children: [
+        {
+          type: "element",
+          name: "circle",
+          attributes: { cx: "5", cy: "5", r: "4" },
+          children: [],
+        },
+      ],
+    },
+  ],
+};
+
+stringify(document, { pretty: true });
+```
+
 ## Object model
 
 `parse()` returns an `SvgDocument`. Its `children` contain exactly one root element, plus any comments, processing instructions, DOCTYPE, and whitespace outside it.
@@ -225,7 +331,7 @@ try {
 - Bun 1.2 or later
 - Browsers that support ES2022
 
-The test suite currently runs in Node.js. Testing in Bun and browsers is planned.
+CI runs the test suite on Node.js 22, 24, and 26, on Bun 1.2.23 and the latest Bun release, and in Chromium, Firefox, and WebKit.
 
 ## Safety
 
@@ -255,6 +361,30 @@ parse(svg, {
 
 Parsing SVG into an object tree does **not** make arbitrary SVG safe to render in a browser. Applications that display untrusted SVG must apply an appropriate sanitization policy.
 
+## Limitations
+
+- **Lexical details are not preserved.** Quote style, entity spelling, and whitespace inside tags are normalized, as described in [Round-trip behavior](#round-trip-behavior).
+- **Entities with markup are not supported.** An entity whose replacement text contains elements, such as `<!ENTITY shape "<path/>">`, makes `parse()` throw an `UNSUPPORTED_ENTITY` error. Text entities, which Adobe Illustrator uses, are expanded.
+- **The DTD is not interpreted.** Parameter entities are not expanded, and default attribute values from `<!ATTLIST>` are not applied.
+- **Namespace URIs are not resolved.** Names keep the prefixes as written; only undeclared prefixes are rejected.
+- **Only XML syntax is accepted.** SVG embedded in HTML, which follows HTML parsing rules, has to be extracted as well-formed XML first.
+
+## Comparison with alternatives
+
+[svgson](https://github.com/elrumordelaluz/svgson) and [svg-parser](https://github.com/Rich-Harris/svg-parser) also turn SVG into JavaScript objects. The table shows how they handled the same inputs in svgson 5.3.1 and svg-parser 2.1.0:
+
+|                                                | svg-serde                              | svgson                                 | svg-parser                                            |
+| ---------------------------------------------- | -------------------------------------- | -------------------------------------- | ----------------------------------------------------- |
+| Serialization                                  | `stringify()`                          | `stringify()`                          | Parsing only                                          |
+| Malformed input, such as `<svg><g></svg>`      | `SvgParseError` with code and position | Unrelated `TypeError`                  | Error for mismatched tags; unclosed tags are accepted |
+| Comments, processing instructions              | Kept as nodes                          | Dropped                                | Dropped; prolog kept as a string                      |
+| Entity references (`&amp;`, `&#169;`)          | Decoded                                | Kept as written                        | Kept as written                                       |
+| Escaped text and attributes after a round trip | Unchanged                              | Changed: `&quot;` becomes `&amp;quot;` | —                                                     |
+| Entities declared in the DOCTYPE               | Expanded with limits                   | Not expanded                           | Not expanded                                          |
+| Attribute values                               | Strings                                | Strings                                | Numeric strings become numbers                        |
+
+svgson can also transform nodes while parsing, and svg-parser produces a [hast](https://github.com/syntax-tree/hast)-like tree. Choose svg-serde when the tree has to be written back without losing or changing data.
+
 ## Scope
 
 `svg-serde` handles:
@@ -276,9 +406,20 @@ The following are intentionally **out of scope**:
 
 These tasks can be handled by separate libraries without making `svg-serde` depend on them.
 
+## Versioning
+
+`svg-serde` follows [semantic versioning](https://semver.org/). Until version 1.0, the object model may still change:
+
+- **0.x minor releases** (0.2 to 0.3) may contain breaking changes, which the release notes list.
+- **0.x patch releases** (0.2.0 to 0.2.1) contain only fixes and compatible additions.
+
+From version 1.0, breaking changes require a major release. This includes adding a node type, because it breaks exhaustive `switch` statements over `node.type`. Raising the minimum supported runtime versions is also a breaking change.
+
+Release notes are published on [GitHub Releases](https://github.com/hexlabelposition/svg-serde/releases).
+
 ## Project status
 
-`parse()` and `stringify()` are implemented and tested with unit tests, property-based tests, and more than 11,000 real-world icons. Next steps include testing in Bun and browsers.
+`parse()` and `stringify()` are implemented and tested with unit tests, property-based tests, and more than 11,000 real-world icons.
 
 See [BACKLOG.md](./BACKLOG.md) for planned functionality, priorities, quality criteria, and design decisions.
 

@@ -41,7 +41,7 @@ export interface XmlDeclaration {
  *
  * Holds everything outside the root `<svg>` element as well, such as the XML
  * declaration, DOCTYPE, and top-level comments, so they survive a round trip.
- * To work with the SVG itself, find the `SvgElement` in `children`.
+ * To work with the SVG itself, call `getRoot(document)`.
  */
 export interface SvgDocument {
   type: "document";

@@ -1,5 +1,6 @@
 export { parse } from "./parse";
 export { stringify } from "./stringify";
+export { getRoot } from "./get-root";
 export { SvgParseError } from "./errors";
 export type { SvgParseErrorCode, SvgParseErrorDetails } from "./errors";
 export type { KnownSvgAttributeName, KnownSvgElementName } from "./known-names";

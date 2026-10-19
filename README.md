@@ -90,7 +90,7 @@ const document = parse(`
 ### Modify and serialize
 
 ```ts
-import { parse, stringify } from "svg-serde";
+import { parse, stringify, getRoot } from "svg-serde";
 
 const document = parse(`
   <svg xmlns="http://www.w3.org/2000/svg">
@@ -98,8 +98,8 @@ const document = parse(`
   </svg>
 `);
 
-const svg = document.children.find((node) => node.type === "element");
-const rect = svg?.children.find(
+const svg = getRoot(document);
+const rect = svg.children.find(
   (node) => node.type === "element" && node.name === "rect",
 );
 
@@ -193,17 +193,15 @@ The generator visits children after their parent, so removed elements are never 
 ### Add an accessible title
 
 ```ts
-const svg = document.children.find((node) => node.type === "element");
+const svg = getRoot(document);
 
-if (svg) {
-  svg.attributes.role = "img";
-  svg.children.unshift({
-    type: "element",
-    name: "title",
-    attributes: {},
-    children: [{ type: "text", value: "Home & garden" }],
-  });
-}
+svg.attributes.role = "img";
+svg.children.unshift({
+  type: "element",
+  name: "title",
+  attributes: {},
+  children: [{ type: "text", value: "Home & garden" }],
+});
 
 stringify(document);
 // <svg role="img"><title>Home &amp; garden</title>...</svg>
@@ -241,6 +239,18 @@ stringify(document, { pretty: true });
 ## Object model
 
 `parse()` returns an `SvgDocument`. Its `children` contain exactly one root element, plus any comments, processing instructions, DOCTYPE, and whitespace outside it.
+
+Use `getRoot(document)` to access that element:
+
+```ts
+import { parse, getRoot } from "svg-serde";
+
+const document = parse('<svg viewBox="0 0 24 24"/>');
+const root = getRoot(document); // SvgElement
+root.attributes.fill = "currentColor";
+```
+
+`getRoot()` returns the original element, so editing it changes the document. It throws a `TypeError` if a manually created or edited document has zero or multiple root elements. Like `parse()`, it accepts any root element name.
 
 ```ts
 interface SvgDocument {

@@ -29,9 +29,10 @@ Compared with existing libraries such as `svgson` and `svg-parser`, svg-serde fo
 ## API
 
 ```ts
-import { parse, stringify, SvgParseError } from "svg-serde";
+import { parse, stringify, getRoot, SvgParseError } from "svg-serde";
 
 const document = parse(svgString);
+const root = getRoot(document);
 const result = stringify(document);
 
 const formatted = stringify(document, {
@@ -134,7 +135,7 @@ type SvgDocumentChild =
 
 Model rules:
 
-- **Document root:** `parse()` always returns an `SvgDocument`. Comments, processing instructions, and the DOCTYPE outside the root element are kept in `document.children`. A `getRoot()` helper may be added later if there is demand.
+- **Document root:** `parse()` always returns an `SvgDocument`. Comments, processing instructions, and the DOCTYPE outside the root element are kept in `document.children`. `getRoot(document)` returns a reference to its single root element and throws a `TypeError` if there are zero or multiple root elements.
 - **Attribute order:** Guaranteed. `SvgAttributes` is a `Record<string, string>`; XML forbids duplicate attributes and attribute names cannot start with a digit, so JavaScript insertion order matches source order.
 - **Namespaces:** Element and attribute names are stored exactly as written, including prefixes (`xlink:href`, `inkscape:label`). `xmlns` and `xmlns:*` declarations are ordinary attributes. Namespace URIs are not resolved. Using an undeclared prefix is a parse error.
 - **Character and entity references:** Decoded to characters during parsing. `stringify()` escapes minimally: `&`, `<`, `>` in text, plus `"` in attribute values (always serialized with double quotes).
@@ -215,7 +216,7 @@ Compact output (`pretty: false`) serializes text nodes exactly as stored.
 
 ### P2: Future considerations
 
-- [ ] Add a `getRoot(document)` helper if there is demand.
+- [x] Add a public `getRoot(document)` helper that returns the root element and rejects documents with zero or multiple root elements.
 - [ ] Add a `parse({ whitespace: "trim" })` option if editors need cleaner trees.
 - [ ] Add optional source positions on nodes (`parse({ positions: true })`) if code-editor use cases emerge.
 - [ ] Consider optional transformation callbacks during parsing or serialization if clear use cases emerge.

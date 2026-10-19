@@ -1,9 +1,12 @@
 name: CI
 
 on:
+  # Changes to documentation alone are checked by the docs workflow.
   push:
     branches: [main]
+    paths-ignore: &docs ["**.md", LICENSE]
   pull_request:
+    paths-ignore: *docs
   # The release workflow runs these checks on the tagged commit before
   # publishing.
   workflow_call:

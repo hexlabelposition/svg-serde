@@ -1,0 +1,30 @@
+name: Docs
+
+# CI skips changes to documentation alone, so Markdown formatting is checked
+# here. Changes that also touch other files get the full CI, which checks
+# formatting as well.
+on:
+  push:
+    branches: [main]
+    paths: &docs ["**.md"]
+  pull_request:
+    paths: *docs
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  format:
+    name: Check Markdown formatting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+      - run: bun install --frozen-lockfile
+      - run: bunx prettier --check "**/*.md"

@@ -5,15 +5,42 @@ on:
     tags:
       - "v*"
 
-permissions:
-  # Required to create the GitHub release.
-  contents: write
-  # Required for npm trusted publishing and provenance.
-  id-token: write
+# Each job asks for the permissions it needs.
+permissions: {}
 
 jobs:
-  publish:
+  version:
+    name: Check the tag
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check that the tag matches the package version
+        run: |
+          version="$(node -p 'require("./package.json").version')"
+          if [ "$GITHUB_REF_NAME" != "v$version" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match package.json version $version" >&2
+            exit 1
+          fi
+
+  # The same checks as for pushes to main, on the tagged commit.
+  ci:
+    name: CI
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+
+  publish:
+    name: Publish
+    needs: [version, ci]
+    runs-on: ubuntu-latest
+    permissions:
+      # Required to create the GitHub release.
+      contents: write
+      # Required for npm trusted publishing and provenance.
+      id-token: write
     steps:
       - uses: actions/checkout@v7
 
@@ -27,16 +54,11 @@ jobs:
 
       - run: bun install --frozen-lockfile
 
-      - name: Check that the tag matches the package version
-        run: |
-          version="$(node -p 'require("./package.json").version')"
-          if [ "$GITHUB_REF_NAME" != "v$version" ]; then
-            echo "Tag $GITHUB_REF_NAME does not match package.json version $version" >&2
-            exit 1
-          fi
+      # The ci job has already checked this commit, so prepublishOnly is
+      # skipped and only the package is built.
+      - run: bun run build
 
-      # prepublishOnly runs type checking, tests, and the build.
-      - run: npm publish
+      - run: npm publish --ignore-scripts
 
       - name: Create GitHub release
         run: gh release create "$GITHUB_REF_NAME" --verify-tag --generate-notes

@@ -68,6 +68,11 @@ jobs:
   publish:
     name: Publish
     needs: [version, ci, build]
+    # The environment only allows v* tags, and npm only accepts trusted
+    # publishing from this environment.
+    environment:
+      name: npm
+      url: https://www.npmjs.com/package/svg-serde
     runs-on: ubuntu-latest
     permissions:
       # Required to create the GitHub release.

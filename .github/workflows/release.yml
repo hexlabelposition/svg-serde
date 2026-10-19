@@ -80,7 +80,8 @@ jobs:
       # Required for npm trusted publishing and provenance.
       id-token: write
     steps:
-      # Node.js 24 ships npm 11, which supports trusted publishing.
+      # Node.js 24 ships npm 11.19, which supports trusted publishing and,
+      # since 11.15, staged publishing.
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
@@ -91,8 +92,11 @@ jobs:
           name: package
 
       # The ci job has already checked this commit, so lifecycle scripts are
-      # skipped and the tarball from the build job is published as is.
-      - run: npm publish ./*.tgz --ignore-scripts
+      # skipped and the tarball from the build job is staged as is. A staged
+      # version becomes installable only after a maintainer approves it with
+      # 2FA on npmjs.com or with `npm stage approve`. The trusted publisher
+      # cannot publish directly.
+      - run: npm stage publish ./*.tgz --ignore-scripts
 
       - name: Create GitHub release
         run: gh release create "$GITHUB_REF_NAME" --verify-tag --generate-notes --repo "$GITHUB_REPOSITORY"

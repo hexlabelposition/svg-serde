@@ -133,6 +133,24 @@ Formatting only replaces whitespace between elements; text is never changed. Con
 - `<text>`, `<tspan>`, `<textPath>`, `<style>`, `<script>`, `<title>`, and `<desc>`
 - elements with `xml:space="preserve"`
 
+### Remove formatting whitespace
+
+By default, `parse()` keeps every text node, including line breaks and indentation between elements. Pass `whitespace: "trim"` to drop that whitespace and get a tree with only meaningful nodes:
+
+```ts
+const svg = `
+<svg>
+  <g>
+    <rect/>
+  </g>
+</svg>`;
+
+parse(svg, { whitespace: "trim" });
+// The same tree as parse("<svg><g><rect/></g></svg>")
+```
+
+It removes exactly the whitespace that `pretty` replaces, by the same rules, so text and the content of the elements listed above stay unchanged.
+
 ## Examples
 
 The tree is plain data, so changes are ordinary JavaScript: assign or `delete` attributes, and add, remove, or reorder `children`. A small generator makes it easy to visit every element:

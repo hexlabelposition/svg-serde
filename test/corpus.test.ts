@@ -46,6 +46,11 @@ function check(source: string): string | undefined {
   if (stringify(parse(pretty), { pretty: true }) !== pretty) {
     return "pretty stringify output is not stable";
   }
+
+  const trimmed = parse(source, { whitespace: "trim" });
+  if (stringify(trimmed, { pretty: true }) !== pretty) {
+    return 'whitespace: "trim" changes more than formatting whitespace';
+  }
   return undefined;
 }
 

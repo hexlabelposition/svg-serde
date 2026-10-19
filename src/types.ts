@@ -171,6 +171,13 @@ export interface ParseOptions {
    * Defaults to 1,048,576 (1 MiB).
    */
   maxExpandedLength?: number;
+  /**
+   * `"preserve"` keeps every text node. `"trim"` removes whitespace-only text
+   * between elements, by the same rules as `pretty` in `stringify()`: text
+   * content, such as inside `<text>` or `<style>`, is never changed.
+   * Defaults to `"preserve"`.
+   */
+  whitespace?: "preserve" | "trim";
 }
 
 /**

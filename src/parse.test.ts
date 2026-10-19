@@ -2,10 +2,12 @@ import { describe, expect, test } from "vitest";
 import { SvgParseError } from "./errors";
 import { parse } from "./parse";
 import { stringify } from "./stringify";
-import type { SvgElement } from "./types";
+import type { ParseOptions, SvgElement } from "./types";
 
-function root(svg: string): SvgElement {
-  const element = parse(svg).children.find((child) => child.type === "element");
+function root(svg: string, options?: ParseOptions): SvgElement {
+  const element = parse(svg, options).children.find(
+    (child) => child.type === "element",
+  );
   if (element === undefined) {
     throw new Error("No root element");
   }
@@ -311,6 +313,55 @@ describe("parse", () => {
     test("limits depth by default", () => {
       const svg = "<g>".repeat(5000) + "</g>".repeat(5000);
       expect(parseError(svg).code).toBe("MAX_DEPTH_EXCEEDED");
+    });
+  });
+
+  describe("whitespace", () => {
+    const trim = { whitespace: "trim" } as const;
+
+    test("removes whitespace between elements", () => {
+      expect(
+        parse(
+          "\n<svg>\n  <g>\n    <rect/>\n  </g>\n  <!-- c -->\n</svg>\n",
+          trim,
+        ),
+      ).toEqual(parse("<svg><g><rect/></g><!-- c --></svg>"));
+    });
+
+    test("keeps whitespace by default", () => {
+      expect(root("<svg> <g/> </svg>").children).toHaveLength(3);
+      expect(parse("<svg> <g/> </svg>", { whitespace: "preserve" })).toEqual(
+        parse("<svg> <g/> </svg>"),
+      );
+    });
+
+    test("keeps text elements unchanged", () => {
+      const svg =
+        "<svg><text> <tspan>a</tspan> </text><style> </style>" +
+        "<title> </title><desc>\n</desc></svg>";
+      expect(parse(svg, trim)).toEqual(parse(svg));
+    });
+
+    test("keeps mixed content unchanged, including nested elements", () => {
+      const svg =
+        "<svg><foreignObject><p>Hello <b> <i/> </b></p></foreignObject></svg>";
+      expect(root(svg, trim)).toEqual(root(svg));
+    });
+
+    test("keeps content with CDATA unchanged", () => {
+      const svg = "<svg><g> <![CDATA[x]]> </g></svg>";
+      expect(root(svg, trim)).toEqual(root(svg));
+    });
+
+    test('keeps xml:space="preserve" content unchanged', () => {
+      const svg = '<svg><g xml:space="preserve"> <g> <rect/> </g> </g></svg>';
+      expect(root(svg, trim).children).toEqual(root(svg).children);
+    });
+
+    test("rejects an invalid value", () => {
+      expect(() =>
+        parse("<svg/>", { whitespace: "collapse" as "trim" }),
+      ).toThrow(RangeError);
     });
   });
 });

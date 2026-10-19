@@ -51,6 +51,7 @@ interface ParseOptions {
   maxDepth?: number; // maximum element nesting depth
   maxEntityExpansions?: number; // maximum number of internal entity expansions
   maxExpandedLength?: number; // maximum total length of expanded entity text
+  whitespace?: "preserve" | "trim"; // default: "preserve"
 }
 ```
 
@@ -141,7 +142,7 @@ Model rules:
 - **Character and entity references:** Decoded to characters during parsing. `stringify()` escapes minimally: `&`, `<`, `>` in text, plus `"` in attribute values (always serialized with double quotes).
 - **CDATA:** Kept as separate `cdata` nodes and serialized back as CDATA sections.
 - **DOCTYPE and entities:** The DOCTYPE is stored as a raw string. Internal entities declared in the internal subset are expanded within the configured limits (this covers files exported from Adobe Illustrator). External entities and external DTDs are never loaded; referencing an external entity is a parse error. Because `saxes` does not process the internal subset, entity declarations are parsed by svg-serde itself. Only text replacements are supported: referencing an entity whose replacement text contains markup is a parse error (`UNSUPPORTED_ENTITY`). Parameter entities are not supported; as XML requires from processors that do not read external declarations, entity declarations after a parameter entity reference are ignored. Default attribute values from `<!ATTLIST>` are not applied.
-- **Whitespace:** `parse()` preserves all text nodes, including whitespace-only nodes.
+- **Whitespace:** `parse()` preserves all text nodes, including whitespace-only nodes. With `whitespace: "trim"`, it removes the whitespace-only text nodes that `pretty` would replace (see Formatting rules), and nothing else.
 
 ### Typing of known SVG names
 
@@ -170,7 +171,7 @@ Compact output (`pretty: false`) serializes text nodes exactly as stored.
 | CDATA, PI, DOCTYPE, XML declaration | Dedicated node types; the XML declaration is a `document.declaration` field.                                                                                                                    |
 | Internal entities                   | Expanded with limits; external entities rejected.                                                                                                                                               |
 | Character references                | Decoded on parse, minimally escaped on stringify.                                                                                                                                               |
-| Whitespace                          | Preserved on parse; `pretty` only reformats element-only content. A `parse({ whitespace: "trim" })` option may be added on demand.                                                              |
+| Whitespace                          | Preserved on parse by default; `parse({ whitespace: "trim" })` and `pretty` share the rules for element-only content.                                                                           |
 | Round-trip equivalence              | See Quality Criteria.                                                                                                                                                                           |
 | Namespaces                          | Qualified names as written, no URI resolution, undeclared prefixes rejected.                                                                                                                    |
 | Attribute order                     | Guaranteed via `Record<string, string>`.                                                                                                                                                        |
@@ -217,7 +218,7 @@ Compact output (`pretty: false`) serializes text nodes exactly as stored.
 ### P2: Future considerations
 
 - [x] Add a public `getRoot(document)` helper that returns the root element and rejects documents with zero or multiple root elements.
-- [ ] Add a `parse({ whitespace: "trim" })` option if editors need cleaner trees.
+- [x] Add a `parse({ whitespace: "trim" })` option if editors need cleaner trees.
 - [ ] Add optional source positions on nodes (`parse({ positions: true })`) if code-editor use cases emerge.
 - [ ] Consider optional transformation callbacks during parsing or serialization if clear use cases emerge.
 - [x] Benchmark small and large SVG files against relevant alternatives, including `svgson` and `svg-parser` where operations are comparable.

@@ -10,6 +10,7 @@ import type {
   SvgNode,
   XmlDeclaration,
 } from "./types";
+import { trimWhitespace } from "./whitespace";
 import { INVALID_CHAR } from "./xml";
 
 /**
@@ -41,8 +42,12 @@ const DEFAULT_MAX_EXPANDED_LENGTH = 1024 * 1024;
  * Entities declared in the DOCTYPE internal subset are expanded; external
  * entities and external DTDs are never loaded.
  *
+ * With `whitespace: "trim"`, whitespace-only text between elements is
+ * removed; text content is never changed.
+ *
  * Throws an `SvgParseError` for malformed input or when a limit from
- * `options` is exceeded.
+ * `options` is exceeded, and a `RangeError` for an invalid `whitespace`
+ * option.
  */
 export function parse(svg: string, options: ParseOptions = {}): SvgDocument {
   const maxInputLength = options.maxInputLength ?? DEFAULT_MAX_INPUT_LENGTH;
@@ -52,6 +57,14 @@ export function parse(svg: string, options: ParseOptions = {}): SvgDocument {
       options.maxEntityExpansions ?? DEFAULT_MAX_ENTITY_EXPANSIONS,
     maxExpandedLength: options.maxExpandedLength ?? DEFAULT_MAX_EXPANDED_LENGTH,
   };
+  const whitespace = options.whitespace ?? "preserve";
+  // Options passed at runtime may hold any value despite the type.
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  if (whitespace !== "preserve" && whitespace !== "trim") {
+    throw new RangeError(
+      `whitespace must be "preserve" or "trim": ${JSON.stringify(whitespace)}`,
+    );
+  }
 
   if (svg.length > maxInputLength) {
     throw new SvgParseError(
@@ -72,7 +85,7 @@ export function parse(svg: string, options: ParseOptions = {}): SvgDocument {
   }
 
   const parser = new SaxesParser({ xmlns: true, position: true });
-  const children: SvgDocumentChild[] = [];
+  let children: SvgDocumentChild[] = [];
 
   // saxes skips whitespace at the start of the document without reporting it.
   const leadingWhitespace = DOCUMENT_START_WHITESPACE.exec(svg)?.[1];
@@ -190,6 +203,10 @@ export function parse(svg: string, options: ParseOptions = {}): SvgDocument {
       saxesErrorCode(message),
       error,
     );
+  }
+
+  if (whitespace === "trim") {
+    children = trimWhitespace(children);
   }
 
   return declaration === undefined

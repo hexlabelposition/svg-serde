@@ -7,6 +7,7 @@ import type {
   StringifyOptions,
   XmlDeclaration,
 } from "./types";
+import { isElementOnly, WHITESPACE } from "./whitespace";
 import { INVALID_CHAR, NAME } from "./xml";
 
 /**
@@ -196,22 +197,6 @@ function stringifyElement(
   return `${output}</${element.name}>`;
 }
 
-/**
- * Whether whitespace in an element's content is insignificant, so that
- * `pretty` can replace it.
- */
-function isElementOnly(element: SvgElement): boolean {
-  return (
-    !TEXT_ELEMENTS.has(element.name) &&
-    element.attributes["xml:space"] !== "preserve" &&
-    element.children.every(
-      (child) =>
-        child.type !== "cdata" &&
-        (child.type !== "text" || WHITESPACE.test(child.value)),
-    )
-  );
-}
-
 function stringifyComment(comment: SvgComment): string {
   assertChars(comment.value, "comment");
   if (comment.value.includes("--") || comment.value.endsWith("-")) {
@@ -242,20 +227,6 @@ function stringifyInstruction(instruction: SvgInstruction): string {
   return value === "" ? `<?${target}?>` : `<?${target} ${value}?>`;
 }
 
-const WHITESPACE = /^[ \t\r\n]*$/;
-
-/**
- * Elements whose content is text, where `pretty` never changes whitespace.
- */
-const TEXT_ELEMENTS: ReadonlySet<string> = new Set([
-  "text",
-  "tspan",
-  "textPath",
-  "style",
-  "script",
-  "title",
-  "desc",
-]);
 const VERSION = /^1\.[0-9]+$/;
 const ENCODING = /^[A-Za-z][A-Za-z0-9._-]*$/;
 

@@ -313,6 +313,18 @@ describe("properties", () => {
     );
   });
 
+  test('whitespace: "trim" removes exactly the formatting whitespace', () => {
+    fc.assert(
+      fc.property(documentArbitrary, fc.boolean(), (document, pretty) => {
+        const output = stringify(document, { pretty });
+        expect(parse(output, { whitespace: "trim" })).toEqual(
+          stripDocumentFormatting(document),
+        );
+      }),
+      { numRuns: 1000 },
+    );
+  });
+
   test("parse either returns a round-trippable document or throws SvgParseError", () => {
     const mutated = fc
       .tuple(

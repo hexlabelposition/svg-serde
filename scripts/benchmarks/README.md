@@ -120,3 +120,36 @@ into one benchmark process and pass the same prepared tree to each serializer.
 Use `bench.compare()` with the snapshot's sampling options, then repeat with
 the registration order reversed. Paired measurements reduce the effect of
 changing conditions between separate runs.
+
+## Tree building and name validation optimization
+
+CPU profiles of `parse()` show that most time is spent in the saxes tokenizer;
+svg-serde's own share was mostly copying attributes from each saxes tag through
+`Object.entries()`. Attributes are now copied with `for...in`. Each element's
+`children` array is also copied to its exact length when the element closes:
+growing arrays reserve spare capacity, which made up about a quarter of the
+tree's memory in documents where most elements have one child.
+
+In `stringify()`, names are validated against a large Unicode pattern. Valid
+names are now cached in a set of at most 1,024 entries, which is cleared when
+full, since documents repeat a few names many times. Collecting output in an
+array of parts instead of concatenating strings was slower and was not kept.
+
+Retained heap after parsing 100,000 groups with a rectangle (9.6M characters)
+went from 281 to 216 bytes per element (56.2 MB to 43.3 MB). Median latencies
+from a paired comparison, alternating both builds in one process:
+
+| Input                         | Node.js parse | Node.js stringify | Bun parse | Bun stringify |
+| ----------------------------- | ------------- | ----------------- | --------- | ------------- |
+| `figma/wallet`                | 1.07×         | 1.13×             | 1.11×     | 1.45×         |
+| `inkscape/emblem-pause`       | 1.06×         | 1.45×             | 1.08×     | 1.48×         |
+| `illustrator/circle-and-text` | 1.05×         | 1.12×             | 1.03×     | 1.36×         |
+| `generated/1000-rectangles`   | 1.12×         | 1.22×             | 1.14×     | 1.58×         |
+| `generated/10000-rectangles`  | 1.14×         | 1.22×             | 1.13×     | 1.34×         |
+| `generated/large-path`        | 1.00×         | 0.99×             | 1.00×     | 1.01×         |
+
+Speedups are relative to commit `5c2157e`, measured on Node.js 26.8.1 and
+Bun 1.4.0. The large path has a single attribute, so neither change
+applies to it. Disabling the saxes namespace mode would save about another 10%
+of parse time, but svg-serde would then have to reimplement namespace
+well-formedness checks, so the mode is kept.

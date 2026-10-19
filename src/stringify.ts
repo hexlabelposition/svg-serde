@@ -163,9 +163,18 @@ function stringifyElement(
   assertName(element.name, "element");
   let output = `<${element.name}`;
 
-  for (const [name, value] of Object.entries(element.attributes)) {
+  const { attributes } = element;
+  // Object.keys() avoids allocating an entry array for every attribute;
+  // for...in would also visit inherited properties of hand-built objects.
+  for (const name of Object.keys(attributes)) {
+    const value = attributes[name];
     assertName(name, "attribute");
-    assertChars(value, `attribute "${name}"`);
+    if (typeof value !== "string") {
+      throw new TypeError(
+        `Attribute "${name}" must be a string: ${JSON.stringify(value)}`,
+      );
+    }
+    assertChars(value, "attribute", name);
     output += ` ${name}="${value.replace(ATTRIBUTE_SPECIAL_CHARS, escapeChar)}"`;
   }
 
@@ -255,18 +264,38 @@ function escapeChar(char: string): string {
   return ESCAPES[char] ?? char;
 }
 
+/**
+ * Names known to be valid. Documents repeat a few names many times, and
+ * testing a name against `NAME` is slower than a set lookup. The set is
+ * cleared when full, so arbitrary names cannot grow it without bound.
+ */
+const validNames = new Set<string>();
+const MAX_VALID_NAMES = 1024;
+
 function assertName(name: string, kind: string): void {
+  if (validNames.has(name)) {
+    return;
+  }
   if (!NAME.test(name)) {
     throw new TypeError(`Invalid ${kind} name: ${JSON.stringify(name)}`);
   }
+  if (validNames.size >= MAX_VALID_NAMES) {
+    validNames.clear();
+  }
+  validNames.add(name);
 }
 
-function assertChars(value: string, kind: string): void {
+/**
+ * `name` names the attribute or other item, separate from `kind` so that the
+ * message is only built on failure.
+ */
+function assertChars(value: string, kind: string, name?: string): void {
   const match = INVALID_CHAR.exec(value);
   if (match !== null) {
     const codePoint = match[0].codePointAt(0) ?? 0;
+    const item = name === undefined ? kind : `${kind} "${name}"`;
     throw new TypeError(
-      `Invalid character U+${codePoint.toString(16).toUpperCase().padStart(4, "0")} in ${kind}`,
+      `Invalid character U+${codePoint.toString(16).toUpperCase().padStart(4, "0")} in ${item}`,
     );
   }
 }

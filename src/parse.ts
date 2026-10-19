@@ -1,4 +1,4 @@
-import { SaxesParser } from "saxes";
+import { SaxesParser, type SaxesAttributeNS } from "saxes";
 import { parseEntityDeclarations } from "./doctype";
 import { createEntityResolver } from "./entities";
 import { SvgParseError, type SvgParseErrorCode } from "./errors";
@@ -221,8 +221,9 @@ export function parse(svg: string, options: ParseOptions = {}): SvgDocument {
     }
 
     const attributes: Record<string, string> = {};
-    for (const [name, attribute] of Object.entries(tag.attributes)) {
-      attributes[name] = attribute.value;
+    // for...in avoids allocating an array of entries for every element.
+    for (const name in tag.attributes) {
+      attributes[name] = (tag.attributes[name] as SaxesAttributeNS).value;
     }
 
     const element: SvgElement = {
@@ -241,6 +242,12 @@ export function parse(svg: string, options: ParseOptions = {}): SvgDocument {
 
   parser.on("closetag", () => {
     const element = stack.pop();
+    // Arrays reserve room for more items as they grow; copying gives the
+    // array an exact capacity, which saves memory in large trees where most
+    // elements have few children.
+    if (element !== undefined && element.children.length > 0) {
+      element.children = element.children.slice();
+    }
     const start = elementStarts.pop();
     if (element !== undefined && start !== undefined) {
       element.position = { start, end: pointAt(parser.position) };

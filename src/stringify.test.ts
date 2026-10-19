@@ -150,6 +150,30 @@ describe("stringify", () => {
       });
       expect(() => stringify(document)).toThrow(TypeError);
     });
+
+    test("rejects invalid characters, naming the attribute", () => {
+      const document = svg({
+        type: "element",
+        name: "g",
+        attributes: { "data-x": "a\u0001" },
+        children: [],
+      });
+      expect(() => stringify(document)).toThrow(
+        new TypeError('Invalid character U+0001 in attribute "data-x"'),
+      );
+    });
+
+    test("rejects values that are not strings", () => {
+      const document = svg({
+        type: "element",
+        name: "rect",
+        attributes: { width: 10 as unknown as string },
+        children: [],
+      });
+      expect(() => stringify(document)).toThrow(
+        new TypeError('Attribute "width" must be a string: 10'),
+      );
+    });
   });
 
   describe("text", () => {

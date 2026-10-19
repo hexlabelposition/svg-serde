@@ -16,6 +16,8 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Check that the tag matches the package version
         run: |
@@ -32,9 +34,40 @@ jobs:
     permissions:
       contents: read
 
+  # The package is built without publishing permissions, so dependencies and
+  # third-party actions never run in the job that can publish.
+  build:
+    name: Build the package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: oven-sh/setup-bun@v2
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - run: bun install --frozen-lockfile
+
+      - run: bun run build
+
+      - run: npm pack --ignore-scripts
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: package
+          path: "*.tgz"
+          if-no-files-found: error
+          retention-days: 7
+
   publish:
     name: Publish
-    needs: [version, ci]
+    needs: [version, ci, build]
     runs-on: ubuntu-latest
     permissions:
       # Required to create the GitHub release.
@@ -42,25 +75,21 @@ jobs:
       # Required for npm trusted publishing and provenance.
       id-token: write
     steps:
-      - uses: actions/checkout@v7
-
-      - uses: oven-sh/setup-bun@v2
-
       # Node.js 24 ships npm 11, which supports trusted publishing.
       - uses: actions/setup-node@v7
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
 
-      - run: bun install --frozen-lockfile
+      - uses: actions/download-artifact@v8
+        with:
+          name: package
 
-      # The ci job has already checked this commit, so prepublishOnly is
-      # skipped and only the package is built.
-      - run: bun run build
-
-      - run: npm publish --ignore-scripts
+      # The ci job has already checked this commit, so lifecycle scripts are
+      # skipped and the tarball from the build job is published as is.
+      - run: npm publish ./*.tgz --ignore-scripts
 
       - name: Create GitHub release
-        run: gh release create "$GITHUB_REF_NAME" --verify-tag --generate-notes
+        run: gh release create "$GITHUB_REF_NAME" --verify-tag --generate-notes --repo "$GITHUB_REPOSITORY"
         env:
           GH_TOKEN: ${{ github.token }}

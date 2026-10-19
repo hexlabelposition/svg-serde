@@ -1,0 +1,113 @@
+{
+  "description": "Paired stringify() measurements using the same prepared tree in one process, repeated with reversed order.",
+  "baselineCommit": "8806a12bc7b055f2a56771735cb9afb38f6593f3",
+  "buildSha256": {
+    "before": "42d48562de19bad26388452de8c29cab846136494aba948c10c8ac37c9e8331d",
+    "after": "23c2b6e6a349fadd82368d91a620976b4191aab8f98821b73d7d18a2bd0d0f09"
+  },
+  "input": {
+    "name": "generated/large-path",
+    "bytes": 1114170,
+    "sha256": "913efbdd1b0587288f8ce40305b9fcc29b53b0f8e4a7102bafaf96e864c2418f"
+  },
+  "sampling": {
+    "time": 1500,
+    "iterations": 50,
+    "warmupTime": 500,
+    "warmupIterations": 10
+  },
+  "measurements": [
+    {
+      "runtime": {
+        "name": "node",
+        "version": "v26.8.1"
+      },
+      "packages": {
+        "svg-serde": "0.2.0",
+        "svgson": "5.3.1",
+        "svg-parser": "2.1.0",
+        "vitest": "5.0.5"
+      },
+      "order": "before-first",
+      "before": {
+        "meanMs": 0.8206912133479243,
+        "rmePercent": 0.2121919832016458,
+        "samples": 1828
+      },
+      "after": {
+        "meanMs": 0.4430905011813363,
+        "rmePercent": 0.1607636484358537,
+        "samples": 3386
+      }
+    },
+    {
+      "runtime": {
+        "name": "node",
+        "version": "v26.8.1"
+      },
+      "packages": {
+        "svg-serde": "0.2.0",
+        "svgson": "5.3.1",
+        "svg-parser": "2.1.0",
+        "vitest": "5.0.5"
+      },
+      "order": "after-first",
+      "before": {
+        "meanMs": 0.818695951445723,
+        "rmePercent": 0.16235271587112363,
+        "samples": 1833
+      },
+      "after": {
+        "meanMs": 0.44148888640376516,
+        "rmePercent": 0.10595770369815033,
+        "samples": 3398
+      }
+    },
+    {
+      "runtime": {
+        "name": "bun",
+        "version": "1.4.0"
+      },
+      "packages": {
+        "svg-serde": "0.2.0",
+        "svgson": "5.3.1",
+        "svg-parser": "2.1.0",
+        "vitest": "5.0.5"
+      },
+      "order": "before-first",
+      "before": {
+        "meanMs": 0.6113188084759547,
+        "rmePercent": 0.5991201668658136,
+        "samples": 2454
+      },
+      "after": {
+        "meanMs": 0.116760682961001,
+        "rmePercent": 0.1467817355407583,
+        "samples": 12847
+      }
+    },
+    {
+      "runtime": {
+        "name": "bun",
+        "version": "1.4.0"
+      },
+      "packages": {
+        "svg-serde": "0.2.0",
+        "svgson": "5.3.1",
+        "svg-parser": "2.1.0",
+        "vitest": "5.0.5"
+      },
+      "order": "after-first",
+      "before": {
+        "meanMs": 0.6012121627254464,
+        "rmePercent": 0.5638175674056142,
+        "samples": 2495
+      },
+      "after": {
+        "meanMs": 0.1167384049805404,
+        "rmePercent": 0.1880026777739765,
+        "samples": 12850
+      }
+    }
+  ]
+}

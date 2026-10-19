@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import { arch, cpus, platform, release } from "node:os";
 import * as svgParser from "svg-parser";
 import * as svgson from "svgson";
 import { describe, test } from "vitest";
@@ -42,10 +41,6 @@ const environment = {
     process.versions.bun === undefined
       ? { name: "node", version: process.version }
       : { name: "bun", version: process.versions.bun },
-  platform: platform(),
-  release: release(),
-  arch: arch(),
-  cpu: cpus()[0]?.model ?? "unknown",
   packages: {
     "svg-serde": version("svg-serde"),
     svgson: version("svgson"),

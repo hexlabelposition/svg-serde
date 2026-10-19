@@ -16,7 +16,9 @@ export const NAME: RegExp = new RegExp(
 /**
  * Characters outside the XML `Char` production: https://www.w3.org/TR/xml/#NT-Char
  */
-export const INVALID_CHAR: RegExp = new RegExp(
-  "[^\\t\\n\\r\\u0020-\\uD7FF\\uE000-\\uFFFD\\u{10000}-\\u{10FFFF}]",
-  "u",
-);
+// A positive class of forbidden code points lets engines skip ordinary XML
+// text efficiently. Unicode mode matches valid surrogate pairs as a single
+// astral code point, so the surrogate range here rejects only unpaired ones.
+export const INVALID_CHAR: RegExp =
+  // eslint-disable-next-line no-control-regex -- XML 1.0 forbids these controls.
+  /[\u0000-\u0008\u000B\u000C\u000E-\u001F\uD800-\uDFFF\uFFFE\uFFFF]/u;

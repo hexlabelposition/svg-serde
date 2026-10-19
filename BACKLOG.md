@@ -221,7 +221,8 @@ Compact output (`pretty: false`) serializes text nodes exactly as stored.
 - [ ] Add optional source positions on nodes (`parse({ positions: true })`) if code-editor use cases emerge.
 - [ ] Consider optional transformation callbacks during parsing or serialization if clear use cases emerge.
 - [x] Benchmark small and large SVG files against relevant alternatives, including `svgson` and `svg-parser` where operations are comparable.
-- [ ] Optimize execution time and memory usage based on benchmark results.
+- [x] Optimize XML character validation based on CPU profiling and benchmark results.
+- [ ] Profile and optimize further execution time and memory bottlenecks based on measurements.
 - [ ] Evaluate streaming or incremental parsing only if real use cases justify the added complexity.
 - [ ] Consider an optional mode for preserving more of the original XML syntax (quote style, entity spelling) if needed.
 

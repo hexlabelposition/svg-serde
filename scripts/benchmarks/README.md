@@ -68,11 +68,12 @@ bun run bench:bun --reporter=default --reporter=json --outputFile=benchmark-resu
 ```
 
 `benchmark-results/` is ignored by Git. Each JSON assertion result includes
-`benchmarks` with measured statistics and `meta` with the runtime, OS, CPU,
+`benchmarks` with measured statistics and `meta` with the runtime and
 package versions, built library SHA-256, input size and SHA-256, and sampling
 options. The build hash distinguishes uncommitted library changes that share
 the same package version. Environment and sampling details are also printed
-to the console.
+to the console. The benchmark collector does not query hardware or operating
+system details.
 
 Run Node.js and Bun sequentially on the same idle machine, keep dependencies
 locked, and repeat measurements before drawing conclusions. Avoid concurrent
@@ -91,3 +92,31 @@ not establish equivalent output or correctness. Results on generated shapes
 and a few editor exports cannot represent every SVG workload. Use the corpus
 and property tests to validate correctness when optimizing. This suite measures
 latency and throughput; memory usage needs separate profiling.
+
+## XML character validation optimization
+
+The XML character validator now matches forbidden code points directly instead
+of negating the allowed ranges. Unicode mode continues to distinguish valid
+surrogate pairs from lone surrogates. Tests check every Unicode code point
+against the XML 1.0 `Char` production, plus malformed surrogate sequences.
+
+For `generated/large-path` (1,114,170 bytes), paired measurements of `stringify()`
+gave the following mean latencies. Ranges cover two runs with reversed order:
+
+| Runtime        | Before         | After          | Speedup    |
+| -------------- | -------------- | -------------- | ---------- |
+| Node.js 26.8.1 | 0.819–0.821 ms | 0.442–0.443 ms | 1.85×      |
+| Bun 1.4.0      | 0.601–0.611 ms | 0.117 ms       | 5.15–5.24× |
+
+These are timings for a single synthetic workload. The
+[measurement snapshot](./xml-characters.results.json) records build and input
+hashes, sampling options, runtime and package versions, sample counts, and relative margins of
+error. Baseline source: commit `8806a12`.
+
+To reproduce the full-suite comparison, build that revision in a separate
+checkout with locked dependencies, then run the JSON-report commands above on
+both revisions. For a paired comparison, import both built ESM entry points
+into one benchmark process and pass the same prepared tree to each serializer.
+Use `bench.compare()` with the snapshot's sampling options, then repeat with
+the registration order reversed. Paired measurements reduce the effect of
+changing conditions between separate runs.

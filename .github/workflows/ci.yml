@@ -11,6 +11,13 @@ on:
 permissions:
   contents: read
 
+# A new push to a pull request cancels the checks of the previous one. Other
+# runs, such as pushes to main and releases, get a group of their own, so every
+# commit there is checked.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   check:
     name: Lint, type check, and build

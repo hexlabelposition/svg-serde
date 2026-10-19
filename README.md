@@ -501,7 +501,7 @@ See [BACKLOG.md](./BACKLOG.md) for planned functionality, priorities, quality cr
 
 ## Contributing
 
-Feedback, bug reports, and design discussions are welcome through GitHub Issues. Before implementing a feature, please check the backlog and open issues to avoid overlapping work.
+Feedback, bug reports, and design discussions are welcome through [GitHub Issues](https://github.com/hexlabelposition/svg-serde/issues). See [CONTRIBUTING.md](./CONTRIBUTING.md) for the development setup, conventions, and the release process.
 
 ## License
 

@@ -5,7 +5,12 @@ import { createRequire } from "node:module";
 import * as svgParser from "svg-parser";
 import * as svgson from "svgson";
 import { describe, test } from "vitest";
-import * as serde from "../../dist/index.js";
+
+// Types are available before building, as required by lint and typecheck in CI.
+// The benchmark still loads the built entry point when it actually runs.
+const serde = (await import(
+  new URL("../../dist/index.js", import.meta.url).href
+)) as typeof import("../../src/index");
 
 // Bind functions once, outside timing loops, including Vitest module getters.
 const { parse: parseSerde, stringify: stringifySerde } = serde;

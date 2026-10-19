@@ -47,6 +47,8 @@
     "test:bun": "bun --bun vitest run --project node",
     "test:browser": "vitest run --project 'browser (*)'",
     "test:watch": "vitest --project node",
+    "bench": "bun run build && vitest bench --run --config scripts/benchmarks/vitest.config.ts",
+    "bench:bun": "bun run build && bun --bun vitest bench --run --config scripts/benchmarks/vitest.config.ts",
     "prepublishOnly": "bun run typecheck && bun run test && bun run build"
   },
   "dependencies": {
@@ -57,6 +59,7 @@
     "@eslint/js": "^10.0.1",
     "@tabler/icons": "^3.49.0",
     "@types/node": "^22.20.5",
+    "@types/svg-parser": "^2.0.6",
     "@vitest/browser-playwright": "^5.0.5",
     "bootstrap-icons": "^1.13.2",
     "eslint": "^10.13.0",
@@ -68,7 +71,9 @@
     "publint": "^0.3.25",
     "simple-icons": "^16.35.0",
     "svg-element-attributes": "^2.2.0",
+    "svg-parser": "2.1.0",
     "svg-tag-names": "^3.0.1",
+    "svgson": "5.3.1",
     "tsdown": "^0.23.1",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.71.2",

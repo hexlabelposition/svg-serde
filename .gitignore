@@ -8,6 +8,9 @@ dist/
 # Test coverage
 coverage/
 
+# Local benchmark reports
+benchmark-results/
+
 # Logs
 *.log
 

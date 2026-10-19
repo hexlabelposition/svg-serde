@@ -220,7 +220,7 @@ Compact output (`pretty: false`) serializes text nodes exactly as stored.
 - [ ] Add a `parse({ whitespace: "trim" })` option if editors need cleaner trees.
 - [ ] Add optional source positions on nodes (`parse({ positions: true })`) if code-editor use cases emerge.
 - [ ] Consider optional transformation callbacks during parsing or serialization if clear use cases emerge.
-- [ ] Benchmark small and large SVG files against relevant alternatives, including `svgson` and `svg-parser` where operations are comparable.
+- [x] Benchmark small and large SVG files against relevant alternatives, including `svgson` and `svg-parser` where operations are comparable.
 - [ ] Optimize execution time and memory usage based on benchmark results.
 - [ ] Evaluate streaming or incremental parsing only if real use cases justify the added complexity.
 - [ ] Consider an optional mode for preserving more of the original XML syntax (quote style, entity spelling) if needed.

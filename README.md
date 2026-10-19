@@ -395,6 +395,12 @@ Parsing SVG into an object tree does **not** make arbitrary SVG safe to render i
 
 svgson can also transform nodes while parsing, and svg-parser produces a [hast](https://github.com/syntax-tree/hast)-like tree. Choose svg-serde when the tree has to be written back without losing or changing data.
 
+## Benchmarks
+
+Run `bun run bench` for Node.js or `bun run bench:bun` for Bun. The suite measures parsing, serialization, and full round trips using the built package, with comparisons against `svgson` and `svg-parser` where supported.
+
+See the [benchmark guide](./scripts/benchmarks/README.md) for inputs, sampling settings, JSON reports, and comparison limitations.
+
 ## Scope
 
 `svg-serde` handles:

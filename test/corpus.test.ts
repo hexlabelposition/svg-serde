@@ -6,14 +6,15 @@ import { parse, stringify } from "../src/index";
 
 /**
  * Directories of real-world SVG files. Icon sets come from devDependencies;
- * `fixtures` holds files exported from editors.
+ * `fixtures` holds editor exports and selected SVGO regression inputs.
  */
 const corpora = {
   "simple-icons": "../node_modules/simple-icons/icons",
   "bootstrap-icons": "../node_modules/bootstrap-icons/icons",
   "tabler-icons": "../node_modules/@tabler/icons/icons",
-  fixtures: "fixtures",
 };
+
+const fixtureCorpora = ["inkscape", "illustrator", "figma", "svgo"];
 
 function listSvgFiles(directory: string): string[] {
   return readdirSync(directory, { recursive: true, encoding: "utf8" })
@@ -49,14 +50,12 @@ function check(source: string): string | undefined {
 }
 
 describe("corpus", () => {
-  test.each(Object.entries(corpora))("%s", (name, relativePath) => {
+  test.each(Object.entries(corpora))("%s", (_name, relativePath) => {
     const files = listSvgFiles(join(import.meta.dirname, relativePath));
     const failures: string[] = [];
 
     // Guards against a moved icon directory silently passing with no files.
-    if (name !== "fixtures") {
-      expect(files.length).toBeGreaterThan(100);
-    }
+    expect(files.length).toBeGreaterThan(100);
 
     for (const file of files) {
       const reason = check(readFileSync(file, "utf8"));
@@ -66,5 +65,20 @@ describe("corpus", () => {
     }
 
     expect(failures).toEqual([]);
+  });
+
+  describe.each(fixtureCorpora)("%s fixtures", (name) => {
+    const directory = join(import.meta.dirname, "fixtures", name);
+    const files = listSvgFiles(directory);
+
+    test("contains SVG files", () => {
+      expect(files.length).toBeGreaterThan(0);
+    });
+
+    test.each(
+      files.map((file) => [file.slice(directory.length + 1), file] as const),
+    )("%s round-trips with stable compact and pretty output", (_name, file) => {
+      expect(check(readFileSync(file, "utf8"))).toBeUndefined();
+    });
   });
 });

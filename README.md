@@ -419,7 +419,7 @@ Release notes are published on [GitHub Releases](https://github.com/hexlabelposi
 
 ## Project status
 
-`parse()` and `stringify()` are implemented and tested with unit tests, property-based tests, and more than 11,000 real-world icons.
+`parse()` and `stringify()` are implemented and tested with unit tests, property-based tests, and more than 11,000 real-world icons. The checked-in [SVG corpus](./test/fixtures/README.md) also covers Inkscape, Adobe Illustrator, and Figma exports, plus selected SVGO regression inputs.
 
 See [BACKLOG.md](./BACKLOG.md) for planned functionality, priorities, quality criteria, and design decisions.
 

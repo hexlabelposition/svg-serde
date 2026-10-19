@@ -197,7 +197,7 @@ Compact output (`pretty: false`) serializes text nodes exactly as stored.
 - [x] Preserve attribute values, order, casing, prefixes, and unknown attributes without implicit normalization.
 - [x] Write round-trip tests that check the equivalence rules from Quality Criteria.
 - [x] Add property-based round-trip tests with `fast-check`.
-- [ ] Build a test corpus of real-world files: Inkscape, Adobe Illustrator, and Figma exports, icon sets, and SVGO test fixtures (respecting their licenses).
+- [x] Build a test corpus of real-world files: Inkscape, Adobe Illustrator, and Figma exports, icon sets, and SVGO test fixtures (respecting their licenses).
 - [x] Configure ESM output, `.d.ts` files, package `exports`, npm `files`, and the publishing workflow.
 - [x] Add the MIT `LICENSE` file.
 

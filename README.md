@@ -23,6 +23,8 @@ Working with SVG often means working with XML strings or browser DOM nodes. `svg
 
 The library focuses on one responsibility: **conversion between SVG markup and a structured object representation**. It does not attempt to be an editor, renderer, geometry toolkit, or SVG optimizer.
 
+Compared with similar libraries, `svg-serde` focuses on strict XML parsing, safe handling of untrusted input, and lossless preservation of every supported XML construct. See [Comparison with alternatives](#comparison-with-alternatives).
+
 ## Goals
 
 - **Bidirectional conversion.** Parse SVG markup and serialize an object tree back to SVG.
@@ -31,6 +33,8 @@ The library focuses on one responsibility: **conversion between SVG markup and a
 - **Plain JavaScript objects.** Keep the public representation independent of browser DOM nodes.
 - **Cross-runtime support.** Target Node.js, Bun, and modern browsers.
 - **Small, focused API.** Keep parsing and serialization simple and avoid unrelated SVG processing features.
+- **No implicit interpretation.** Keep attribute values as strings, without evaluating CSS, units, or transforms.
+- **Correctness over zero dependencies.** Rely on a proven XML parser instead of a custom one that could compromise correctness or security.
 
 ## Installation
 
@@ -303,9 +307,11 @@ type SvgDocumentChild =
   | { type: "doctype"; value: string };
 ```
 
-The tree is JSON-safe: no classes, no cycles, and no parent references.
+The tree is plain data: no classes, no cycles, no parent references, and no `undefined` values. It can be stored as JSON, copied with `structuredClone()`, or sent to a worker as is.
 
-`SvgElementName` and the keys of `SvgAttributes` accept any string, but your editor suggests standard SVG element and attribute names. The lists of standard names are exported as `KnownSvgElementName` and `KnownSvgAttributeName`.
+Names are stored as written, including namespace prefixes, and namespace declarations such as `xmlns` and `xmlns:xlink` are ordinary attributes.
+
+`SvgElementName` and the keys of `SvgAttributes` accept any string, but your editor suggests standard SVG element and attribute names. The lists of standard names are exported as `KnownSvgElementName` and `KnownSvgAttributeName`, generated from [svg-tag-names](https://github.com/wooorm/svg-tag-names) and [svg-element-attributes](https://github.com/wooorm/svg-element-attributes).
 
 Attribute values are intentionally represented as strings:
 
@@ -350,6 +356,15 @@ const second = parse(stringify(first));
 // first and second are deeply equal
 ```
 
+With `pretty: true`, the same holds once whitespace-only text between elements is ignored:
+
+```ts
+const formatted = stringify(parse(svg), { pretty: true });
+
+// parse(formatted, { whitespace: "trim" }) and
+// parse(svg, { whitespace: "trim" }) are deeply equal
+```
+
 This does **not** mean byte-for-byte reproduction of the original source. `stringify()` normalizes lexical details that do not change the data:
 
 - Attributes always use double quotes.
@@ -373,7 +388,7 @@ try {
 }
 ```
 
-`stringify()` throws a `TypeError` for a tree that cannot be written as well-formed XML, such as an invalid element name or a comment containing `--`. Such trees can only come from code that builds or edits the tree.
+`stringify()` throws a `TypeError` for a tree that cannot be written as well-formed XML: an invalid name or character, an attribute value that is not a string, a comment containing `--`, a processing instruction containing `?>`, or a document without exactly one root element. Such trees can only come from code that builds or edits the tree, never from `parse()`.
 
 ## Runtime support
 
@@ -384,6 +399,8 @@ try {
 - Browsers that support ES2022
 
 CI runs the test suite on Node.js 22, 24, and 26, on Bun 1.2.23 and the latest Bun release, and in Chromium, Firefox, and WebKit.
+
+The only runtime dependency is [saxes](https://github.com/lddubeau/saxes), a strict XML parser. It is an internal detail and may be replaced without a breaking change.
 
 ## Safety
 
@@ -441,7 +458,7 @@ svgson can also transform nodes while parsing, and svg-parser produces a [hast](
 
 Run `bun run bench` for Node.js or `bun run bench:bun` for Bun. The suite measures parsing, serialization, and full round trips using the built package, with comparisons against `svgson` and `svg-parser` where supported.
 
-See the [benchmark guide](./scripts/benchmarks/README.md) for inputs, sampling settings, JSON reports, and comparison limitations.
+See the [benchmark guide](./scripts/benchmarks/README.md) for inputs, sampling settings, JSON reports, and comparison limitations. Claims about speed or package size in this project are backed by these reproducible measurements.
 
 ## Scope
 
@@ -461,6 +478,7 @@ The following are intentionally **out of scope**:
 - High-level attribute editing or CSS evaluation
 - SVG optimization and minification
 - Editor state, selection, layers, or undo/redo
+- Script execution and loading external resources, such as images or stylesheets
 
 These tasks can be handled by separate libraries without making `svg-serde` depend on them.
 

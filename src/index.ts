@@ -17,6 +17,8 @@ export type {
   SvgElementName,
   SvgInstruction,
   SvgNode,
+  SvgPoint,
+  SvgPosition,
   SvgText,
   XmlDeclaration,
 } from "./types";

@@ -63,6 +63,8 @@ export interface SvgElement {
   name: SvgElementName;
   attributes: SvgAttributes;
   children: SvgNode[];
+  /** Source range, present only when parsed with `positions: true`. */
+  position?: SvgPosition;
 }
 
 /**
@@ -75,6 +77,8 @@ export interface SvgElement {
 export interface SvgText {
   type: "text";
   value: string;
+  /** Source range, present only when parsed with `positions: true`. */
+  position?: SvgPosition;
 }
 
 /**
@@ -87,6 +91,8 @@ export interface SvgText {
 export interface SvgCData {
   type: "cdata";
   value: string;
+  /** Source range, present only when parsed with `positions: true`. */
+  position?: SvgPosition;
 }
 
 /**
@@ -98,6 +104,8 @@ export interface SvgCData {
 export interface SvgComment {
   type: "comment";
   value: string;
+  /** Source range, present only when parsed with `positions: true`. */
+  position?: SvgPosition;
 }
 
 /**
@@ -110,6 +118,8 @@ export interface SvgInstruction {
   type: "instruction";
   target: string;
   value: string;
+  /** Source range, present only when parsed with `positions: true`. */
+  position?: SvgPosition;
 }
 
 /**
@@ -123,6 +133,8 @@ export interface SvgInstruction {
 export interface SvgDoctype {
   type: "doctype";
   value: string;
+  /** Source range, present only when parsed with `positions: true`. */
+  position?: SvgPosition;
 }
 
 /**
@@ -140,6 +152,36 @@ export type SvgNode =
  */
 export type SvgDocumentChild =
   SvgElement | SvgText | SvgComment | SvgInstruction | SvgDoctype;
+
+/**
+ * A location in the source string.
+ *
+ * `offset` is the 0-based index in the string, counted in UTF-16 code units
+ * like JavaScript string indexes. `line` and `column` are 1-based; `column`
+ * counts code units from the start of the line, and `"\r\n"`, `"\r"`, and
+ * `"\n"` each end a line.
+ */
+export interface SvgPoint {
+  line: number;
+  column: number;
+  offset: number;
+}
+
+/**
+ * The source range of a node, added by `parse()` with `positions: true`.
+ *
+ * `start` is the first character of the node and `end` is the character after
+ * it, so `source.slice(start.offset, end.offset)` is the node as written,
+ * with references not yet decoded. An element range covers everything from
+ * its start tag to its end tag.
+ *
+ * Positions describe the parsed source only: `stringify()` ignores them, and
+ * they are not updated when the tree changes.
+ */
+export interface SvgPosition {
+  start: SvgPoint;
+  end: SvgPoint;
+}
 
 /**
  * Options for `parse()`.
@@ -178,6 +220,11 @@ export interface ParseOptions {
    * Defaults to `"preserve"`.
    */
   whitespace?: "preserve" | "trim";
+  /**
+   * Add a `position` with the source range to every node, for tools that map
+   * nodes back to the source, such as code editors. Defaults to `false`.
+   */
+  positions?: boolean;
 }
 
 /**

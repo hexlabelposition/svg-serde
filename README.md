@@ -315,6 +315,30 @@ Attribute values are intentionally represented as strings:
 
 The parser does not convert `"10"` into `10`, evaluate percentages, or interpret CSS expressions. Those behaviors belong to higher-level SVG tooling.
 
+### Source positions
+
+Pass `positions: true` to add the source range of every node, for example to highlight an element in a code editor or to report problems found in the tree:
+
+```ts
+const svg = '<svg>\n  <rect width="10"/>\n</svg>';
+const [, rect] = getRoot(parse(svg, { positions: true })).children;
+
+if (rect?.position) {
+  rect.position;
+  // {
+  //   start: { line: 2, column: 3, offset: 8 },
+  //   end: { line: 2, column: 21, offset: 26 },
+  // }
+
+  svg.slice(rect.position.start.offset, rect.position.end.offset);
+  // '<rect width="10"/>'
+}
+```
+
+`line` and `column` are 1-based and `offset` is 0-based, the same as in `SvgParseError`. Columns and offsets count UTF-16 code units, like JavaScript string indexes, and `end` points to the character after the node. An element range covers everything from its start tag to its end tag, and a text range covers the text as written, before references are decoded.
+
+Positions are added only on request, so trees stay small by default. `stringify()` ignores them, and they are not updated when the tree changes.
+
 ## Round-trip behavior
 
 For every document returned by `parse()`, serializing and parsing again produces an equal tree:

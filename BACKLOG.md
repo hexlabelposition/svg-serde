@@ -52,6 +52,7 @@ interface ParseOptions {
   maxEntityExpansions?: number; // maximum number of internal entity expansions
   maxExpandedLength?: number; // maximum total length of expanded entity text
   whitespace?: "preserve" | "trim"; // default: "preserve"
+  positions?: boolean; // default: false, adds source ranges to nodes
 }
 ```
 
@@ -129,6 +130,19 @@ interface SvgDoctype {
   value: string; // raw declaration content, including the internal subset
 }
 
+interface SvgPoint {
+  line: number; // 1-based
+  column: number; // 1-based, in UTF-16 code units
+  offset: number; // 0-based, in UTF-16 code units
+}
+
+interface SvgPosition {
+  start: SvgPoint;
+  end: SvgPoint; // exclusive
+}
+
+// Every node type also has an optional `position?: SvgPosition`.
+
 type SvgNode = SvgElement | SvgText | SvgCData | SvgComment | SvgInstruction;
 type SvgDocumentChild =
   SvgElement | SvgComment | SvgInstruction | SvgDoctype | SvgText;
@@ -142,6 +156,7 @@ Model rules:
 - **Character and entity references:** Decoded to characters during parsing. `stringify()` escapes minimally: `&`, `<`, `>` in text, plus `"` in attribute values (always serialized with double quotes).
 - **CDATA:** Kept as separate `cdata` nodes and serialized back as CDATA sections.
 - **DOCTYPE and entities:** The DOCTYPE is stored as a raw string. Internal entities declared in the internal subset are expanded within the configured limits (this covers files exported from Adobe Illustrator). External entities and external DTDs are never loaded; referencing an external entity is a parse error. Because `saxes` does not process the internal subset, entity declarations are parsed by svg-serde itself. Only text replacements are supported: referencing an entity whose replacement text contains markup is a parse error (`UNSUPPORTED_ENTITY`). Parameter entities are not supported; as XML requires from processors that do not read external declarations, entity declarations after a parameter entity reference are ignored. Default attribute values from `<!ATTLIST>` are not applied.
+- **Source positions:** With `positions: true`, `parse()` adds a `position` to every node, with `start` and `end` points of the node as written; an element range spans from its start tag to its end tag. Points use the same `line`, `column`, and `offset` as `SvgParseError`. The field is absent by default, ignored by `stringify()`, and never updated after parsing. The XML declaration has no position.
 - **Whitespace:** `parse()` preserves all text nodes, including whitespace-only nodes. With `whitespace: "trim"`, it removes the whitespace-only text nodes that `pretty` would replace (see Formatting rules), and nothing else.
 
 ### Typing of known SVG names
@@ -178,7 +193,7 @@ Compact output (`pretty: false`) serializes text nodes exactly as stored.
 | SVG typing                          | Autocomplete-only unions with `string & {}` fallback.                                                                                                                                           |
 | Limits                              | Parse options with safe defaults.                                                                                                                                                               |
 | Errors                              | Single `SvgParseError` class with `code`, `line`, `column`, `offset`. `stringify()` throws `TypeError` for trees that cannot be written as well-formed XML.                                     |
-| Source positions on nodes           | Not in the first release; positions only in errors.                                                                                                                                             |
+| Source positions on nodes           | Optional `position` with `start`/`end` points (`line`, `column`, `offset`), added by `parse({ positions: true })`.                                                                              |
 | Runtimes                            | Node.js >= 22, Bun >= 1.2, browsers supporting ES2022 (build target ES2022).                                                                                                                    |
 | License                             | MIT.                                                                                                                                                                                            |
 | Versioning                          | `0.x` until the model is stable; breaking changes allowed in minor releases. After `1.0`, adding a node type is a major release because it breaks exhaustive `switch` statements in TypeScript. |
@@ -219,7 +234,7 @@ Compact output (`pretty: false`) serializes text nodes exactly as stored.
 
 - [x] Add a public `getRoot(document)` helper that returns the root element and rejects documents with zero or multiple root elements.
 - [x] Add a `parse({ whitespace: "trim" })` option if editors need cleaner trees.
-- [ ] Add optional source positions on nodes (`parse({ positions: true })`) if code-editor use cases emerge.
+- [x] Add optional source positions on nodes (`parse({ positions: true })`) if code-editor use cases emerge.
 - [ ] Consider optional transformation callbacks during parsing or serialization if clear use cases emerge.
 - [x] Benchmark small and large SVG files against relevant alternatives, including `svgson` and `svg-parser` where operations are comparable.
 - [x] Optimize XML character validation based on CPU profiling and benchmark results.

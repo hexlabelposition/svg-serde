@@ -2,7 +2,12 @@ import { describe, expect, test } from "vitest";
 import { SvgParseError } from "./errors";
 import { parse } from "./parse";
 import { stringify } from "./stringify";
-import type { ParseOptions, SvgElement } from "./types";
+import type {
+  ParseOptions,
+  SvgDocumentChild,
+  SvgElement,
+  SvgNode,
+} from "./types";
 
 function root(svg: string, options?: ParseOptions): SvgElement {
   const element = parse(svg, options).children.find(
@@ -313,6 +318,142 @@ describe("parse", () => {
     test("limits depth by default", () => {
       const svg = "<g>".repeat(5000) + "</g>".repeat(5000);
       expect(parseError(svg).code).toBe("MAX_DEPTH_EXCEEDED");
+    });
+  });
+
+  describe("positions", () => {
+    const positions = { positions: true } as const;
+
+    test("adds no positions by default", () => {
+      expect(JSON.stringify(parse("<svg><g/>x<!--c--></svg>"))).not.toContain(
+        "position",
+      );
+    });
+
+    test("adds the source range of every node", () => {
+      const svg =
+        '<?xml version="1.0"?>\n<!DOCTYPE svg>\n<svg a="1">\n  <g/><!--c-->' +
+        "<![CDATA[d]]><?pi v?></svg>";
+      const document = parse(svg, positions);
+      const ranges = (nodes: (SvgNode | SvgDocumentChild)[]): unknown[] =>
+        nodes.map((node) => [
+          node.position?.start,
+          node.position?.end,
+          ...(node.type === "element" ? [ranges(node.children)] : []),
+        ]);
+
+      expect(ranges(document.children)).toEqual([
+        [
+          { line: 1, column: 22, offset: 21 },
+          { line: 2, column: 1, offset: 22 },
+        ],
+        [
+          { line: 2, column: 1, offset: 22 },
+          { line: 2, column: 15, offset: 36 },
+        ],
+        [
+          { line: 2, column: 15, offset: 36 },
+          { line: 3, column: 1, offset: 37 },
+        ],
+        [
+          { line: 3, column: 1, offset: 37 },
+          { line: 4, column: 42, offset: 90 },
+          [
+            [
+              { line: 3, column: 12, offset: 48 },
+              { line: 4, column: 3, offset: 51 },
+            ],
+            [
+              { line: 4, column: 3, offset: 51 },
+              { line: 4, column: 7, offset: 55 },
+              [],
+            ],
+            [
+              { line: 4, column: 7, offset: 55 },
+              { line: 4, column: 15, offset: 63 },
+            ],
+            [
+              { line: 4, column: 15, offset: 63 },
+              { line: 4, column: 28, offset: 76 },
+            ],
+            [
+              { line: 4, column: 28, offset: 76 },
+              { line: 4, column: 36, offset: 84 },
+            ],
+          ],
+        ],
+      ]);
+    });
+
+    test("covers text as written, before decoding", () => {
+      const svg = '<!DOCTYPE svg [<!ENTITY e "x">]><svg>a &amp; &e;&#10;</svg>';
+      const [text] = root(svg, positions).children;
+      expect(text?.type === "text" && text.value).toBe("a & x\n");
+      expect(
+        svg.slice(text?.position?.start.offset, text?.position?.end.offset),
+      ).toBe("a &amp; &e;&#10;");
+    });
+
+    test('counts "\\r\\n", "\\r", and "\\n" as line breaks', () => {
+      const element = root("<svg>\r\n\r\n<g/></svg>", positions).children[1];
+      expect(element?.position?.start).toEqual({
+        line: 3,
+        column: 1,
+        offset: 9,
+      });
+      expect(
+        root("<svg>\r\r\n<g/></svg>", positions).children[1]?.position?.start,
+      ).toEqual({ line: 3, column: 1, offset: 8 });
+    });
+
+    test("counts columns in UTF-16 code units", () => {
+      const [, element] = root("<svg>\u{1F600}<g/></svg>", positions).children;
+      expect(element?.position?.start).toEqual({
+        line: 1,
+        column: 8,
+        offset: 7,
+      });
+    });
+
+    test("counts a byte order mark and leading whitespace", () => {
+      const document = parse("\uFEFF\n<svg/>", positions);
+      expect(document.children.map((child) => child.position)).toEqual([
+        {
+          start: { line: 1, column: 2, offset: 1 },
+          end: { line: 2, column: 1, offset: 2 },
+        },
+        {
+          start: { line: 2, column: 1, offset: 2 },
+          end: { line: 2, column: 7, offset: 8 },
+        },
+      ]);
+    });
+
+    test('ignores ">" in attribute values and the internal subset', () => {
+      const svg = '<!DOCTYPE svg [<!ENTITY e ">">]><svg a=">"><g b=">"/></svg>';
+      const document = parse(svg, positions);
+      expect(document.children[0]?.position?.end.offset).toBe(32);
+      expect(root(svg, positions).children[0]?.position).toEqual({
+        start: { line: 1, column: 44, offset: 43 },
+        end: { line: 1, column: 54, offset: 53 },
+      });
+    });
+
+    test("keeps positions of remaining nodes with whitespace trimmed", () => {
+      const element = root("<svg>\n  <g/>\n</svg>", {
+        positions: true,
+        whitespace: "trim",
+      }).children[0];
+      expect(element?.position?.start).toEqual({
+        line: 2,
+        column: 3,
+        offset: 8,
+      });
+    });
+
+    test("is ignored by stringify()", () => {
+      const svg = "<svg>\n  <g>x</g><!--c-->\n</svg>";
+      expect(stringify(parse(svg, positions))).toBe(svg);
     });
   });
 

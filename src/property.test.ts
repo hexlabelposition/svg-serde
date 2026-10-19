@@ -1,5 +1,6 @@
 import fc from "fast-check";
 import { describe, expect, test } from "vitest";
+import { checkPositions } from "../test/positions";
 import { SvgParseError } from "./errors";
 import { parse } from "./parse";
 import { stringify } from "./stringify";
@@ -321,6 +322,25 @@ describe("properties", () => {
           stripDocumentFormatting(document),
         );
       }),
+      { numRuns: 1000 },
+    );
+  });
+
+  test("positions cover each node as written", () => {
+    fc.assert(
+      fc.property(
+        documentArbitrary,
+        fc.boolean(),
+        fc.boolean(),
+        (document, pretty, crlf) => {
+          let output = stringify(document, { pretty });
+          if (crlf) {
+            output = output.replaceAll("\n", "\r\n");
+          }
+          const parsed = parse(output, { positions: true });
+          expect(checkPositions(output, parsed)).toBeUndefined();
+        },
+      ),
       { numRuns: 1000 },
     );
   });

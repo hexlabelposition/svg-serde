@@ -2,12 +2,14 @@ import { SaxesParser } from "saxes";
 import { parseEntityDeclarations } from "./doctype";
 import { createEntityResolver } from "./entities";
 import { SvgParseError, type SvgParseErrorCode } from "./errors";
+import { createPointTracker } from "./position";
 import type {
   ParseOptions,
   SvgDocument,
   SvgDocumentChild,
   SvgElement,
   SvgNode,
+  SvgPoint,
   XmlDeclaration,
 } from "./types";
 import { trimWhitespace } from "./whitespace";
@@ -43,7 +45,8 @@ const DEFAULT_MAX_EXPANDED_LENGTH = 1024 * 1024;
  * entities and external DTDs are never loaded.
  *
  * With `whitespace: "trim"`, whitespace-only text between elements is
- * removed; text content is never changed.
+ * removed; text content is never changed. With `positions: true`, every node
+ * gets a `position` with its source range.
  *
  * Throws an `SvgParseError` for malformed input or when a limit from
  * `options` is exceeded, and a `RangeError` for an invalid `whitespace`
@@ -80,20 +83,43 @@ export function parse(svg: string, options: ParseOptions = {}): SvgDocument {
     const codePoint = invalidChar[0].codePointAt(0) ?? 0;
     throw new SvgParseError(
       `Invalid character U+${codePoint.toString(16).toUpperCase().padStart(4, "0")}`,
-      { code: "MALFORMED_XML", ...positionAt(svg, invalidChar.index) },
+      {
+        code: "MALFORMED_XML",
+        ...createPointTracker(svg)(invalidChar.index),
+      },
     );
   }
 
   const parser = new SaxesParser({ xmlns: true, position: true });
   let children: SvgDocumentChild[] = [];
 
+  const positions = options.positions === true;
+  const pointAt = createPointTracker(svg);
+  // Tokens follow each other without gaps, so each node starts where the
+  // previous token ends.
+  let tokenEnd = svg.startsWith("\uFEFF") ? 1 : 0;
+  const elementStarts: SvgPoint[] = [];
+
+  const locate = <T extends SvgNode | SvgDocumentChild>(
+    node: T,
+    end: number,
+  ): T => {
+    if (positions) {
+      node.position = { start: pointAt(tokenEnd), end: pointAt(end) };
+    }
+    tokenEnd = end;
+    return node;
+  };
+
   // saxes skips whitespace at the start of the document without reporting it.
   const leadingWhitespace = DOCUMENT_START_WHITESPACE.exec(svg)?.[1];
   if (leadingWhitespace !== undefined) {
-    children.push({
-      type: "text",
-      value: leadingWhitespace.replace(LINE_BREAK, "\n"),
-    });
+    children.push(
+      locate(
+        { type: "text", value: leadingWhitespace.replace(LINE_BREAK, "\n") },
+        tokenEnd + leadingWhitespace.length,
+      ),
+    );
   }
   let declaration: XmlDeclaration | undefined;
   const stack: SvgElement[] = [];
@@ -115,12 +141,18 @@ export function parse(svg: string, options: ParseOptions = {}): SvgDocument {
     if (standalone === "yes" || standalone === "no") {
       declaration.standalone = standalone;
     }
+    tokenEnd = parser.position;
   });
 
   parser.on("doctype", (value) => {
     // saxes includes the whitespace after the DOCTYPE keyword, which
     // stringify() writes back as a single space.
-    append({ type: "doctype", value: value.replace(LEADING_WHITESPACE, "") });
+    append(
+      locate(
+        { type: "doctype", value: value.replace(LEADING_WHITESPACE, "") },
+        parser.position,
+      ),
+    );
 
     const declarations = parseEntityDeclarations(value, (message) => {
       throw positionedError(parser, message, "MALFORMED_XML");
@@ -145,20 +177,37 @@ export function parse(svg: string, options: ParseOptions = {}): SvgDocument {
   });
 
   parser.on("processinginstruction", ({ target, body }) => {
-    append({ type: "instruction", target, value: body });
+    append(
+      locate(
+        { type: "instruction", target, value: body },
+        svg.indexOf("?>", tokenEnd + 2) + 2,
+      ),
+    );
   });
 
   parser.on("comment", (value) => {
-    append({ type: "comment", value });
+    append(
+      locate({ type: "comment", value }, svg.indexOf("-->", tokenEnd + 4) + 3),
+    );
   });
 
   parser.on("cdata", (value) => {
-    append({ type: "cdata", value });
+    append(
+      locate({ type: "cdata", value }, svg.indexOf("]]>", tokenEnd + 9) + 3),
+    );
   });
 
   parser.on("text", (value) => {
-    if (value !== "") {
-      append({ type: "text", value });
+    // saxes reports text after reading the "<" that ends it, except at the
+    // end of the input.
+    const end =
+      svg.charCodeAt(parser.position - 1) === 0x3c
+        ? parser.position - 1
+        : parser.position;
+    if (value === "") {
+      tokenEnd = end;
+    } else {
+      append(locate({ type: "text", value }, end));
     }
   });
 
@@ -184,10 +233,19 @@ export function parse(svg: string, options: ParseOptions = {}): SvgDocument {
     };
     append(element);
     stack.push(element);
+    if (positions) {
+      elementStarts.push(pointAt(tokenEnd));
+    }
+    tokenEnd = parser.position;
   });
 
   parser.on("closetag", () => {
-    stack.pop();
+    const element = stack.pop();
+    const start = elementStarts.pop();
+    if (element !== undefined && start !== undefined) {
+      element.position = { start, end: pointAt(parser.position) };
+    }
+    tokenEnd = parser.position;
   });
 
   try {
@@ -254,23 +312,4 @@ function positionedError(
     offset: parser.position,
     cause,
   });
-}
-
-/**
- * Computes the 1-based line and column of a character offset.
- */
-function positionAt(
-  svg: string,
-  offset: number,
-): { line: number; column: number; offset: number } {
-  let line = 1;
-  let lineStart = 0;
-  for (let i = 0; i < offset; i++) {
-    const char = svg.charAt(i);
-    if (char === "\n" || (char === "\r" && svg.charAt(i + 1) !== "\n")) {
-      line++;
-      lineStart = i + 1;
-    }
-  }
-  return { line, column: offset - lineStart + 1, offset };
 }

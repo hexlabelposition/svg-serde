@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { isDeepStrictEqual } from "node:util";
 import { describe, expect, test } from "vitest";
 import { parse, stringify } from "../src/index";
+import { checkPositions } from "./positions";
 
 /**
  * Directories of real-world SVG files. Icon sets come from devDependencies;
@@ -50,6 +51,12 @@ function check(source: string): string | undefined {
   const trimmed = parse(source, { whitespace: "trim" });
   if (stringify(trimmed, { pretty: true }) !== pretty) {
     return 'whitespace: "trim" changes more than formatting whitespace';
+  }
+
+  const positioned = parse(source, { positions: true });
+  const positionError = checkPositions(source, positioned);
+  if (positionError !== undefined) {
+    return `wrong positions: ${positionError}`;
   }
   return undefined;
 }

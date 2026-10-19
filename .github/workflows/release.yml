@@ -91,11 +91,10 @@ jobs:
         with:
           name: package
 
-      # The ci job has already checked this commit, so lifecycle scripts are
-      # skipped and the tarball from the build job is staged as is. A staged
-      # version becomes installable only after a maintainer approves it with
-      # 2FA on npmjs.com or with `npm stage approve`. The trusted publisher
-      # cannot publish directly.
+      # The tarball from the build job is staged as is; no package scripts run
+      # in the job that can publish. A staged version becomes installable only
+      # after a maintainer approves it with 2FA on npmjs.com or with
+      # `npm stage approve`. The trusted publisher cannot publish directly.
       - run: npm stage publish ./*.tgz --ignore-scripts
 
       - name: Create GitHub release

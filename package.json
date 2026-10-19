@@ -39,7 +39,7 @@
   "scripts": {
     "build": "tsdown",
     "generate": "bun scripts/generate-known-names.ts",
-    "lint": "eslint .",
+    "lint": "eslint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc && tsc -p test && tsc -p scripts",
@@ -48,8 +48,7 @@
     "test:browser": "vitest run --project 'browser (*)'",
     "test:watch": "vitest --project node",
     "bench": "bun run build && vitest bench --run --config scripts/benchmarks/vitest.config.ts",
-    "bench:bun": "bun run build && bun --bun vitest bench --run --config scripts/benchmarks/vitest.config.ts",
-    "prepublishOnly": "bun run typecheck && bun run test && bun run build"
+    "bench:bun": "bun run build && bun --bun vitest bench --run --config scripts/benchmarks/vitest.config.ts"
   },
   "dependencies": {
     "saxes": "^6.0.0"

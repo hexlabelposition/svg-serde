@@ -117,9 +117,6 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.64.1-noble
-      # Firefox refuses to run when HOME belongs to another user.
-      env:
-        HOME: /root
     steps:
       - uses: actions/checkout@v7
       # setup-bun needs unzip, which the image lacks; the npm package ships
@@ -127,3 +124,8 @@ jobs:
       - run: npm install --global bun
       - run: bun install --frozen-lockfile
       - run: bun run test:browser
+        # Steps run as root with HOME set to a directory owned by another
+        # user, where Firefox refuses to start. GitHub sets HOME for each step,
+        # so it is overridden here rather than for the container.
+        env:
+          HOME: /root

@@ -1,0 +1,18 @@
+version: 2
+
+updates:
+  # Workflows pin actions to commit SHAs, which Dependabot keeps up to date
+  # along with the version comments.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    # Newly published versions wait a week, so that a compromised release is
+    # more likely to be noticed and withdrawn before it is proposed.
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: ci

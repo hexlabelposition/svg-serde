@@ -2,8 +2,9 @@
  * Stable, machine-readable reason for an `SvgParseError`.
  *
  * Use it to handle specific failures, e.g. to report a size limit differently
- * from malformed markup. Codes change only in major releases, while `message`
- * may change in any release.
+ * from malformed markup. Existing codes change only in major releases, and new
+ * codes may be added in minor releases, while the message text may change in
+ * any release.
  */
 export type SvgParseErrorCode =
   /**

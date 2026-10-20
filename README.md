@@ -3,14 +3,13 @@
 [![npm version](https://img.shields.io/npm/v/svg-serde)](https://www.npmjs.com/package/svg-serde)
 [![CI](https://github.com/hexlabelposition/svg-serde/actions/workflows/ci.yml/badge.svg)](https://github.com/hexlabelposition/svg-serde/actions/workflows/ci.yml)
 [![Types](https://img.shields.io/npm/types/svg-serde)](https://www.npmjs.com/package/svg-serde)
+[![Node.js](https://img.shields.io/node/v/svg-serde)](#runtime-support)
+[![Bundle size](https://deno.bundlejs.com/badge?q=svg-serde)](https://bundlejs.com/?q=svg-serde)
 [![License](https://img.shields.io/npm/l/svg-serde)](./LICENSE)
 
 **Parse SVG into plain JavaScript objects and serialize them back to SVG.**
 
 `svg-serde` is a TypeScript-first library for working with SVG as structured data. It is designed for SVG editors, icon generators, asset pipelines, and tools that need to inspect, modify, or generate SVG without tying their data model to the browser DOM.
-
-> [!NOTE]
-> **Early development.** Until version 1.0, the API and the object model may change in minor releases.
 
 ## Why svg-serde?
 
@@ -437,7 +436,7 @@ try {
 }
 ```
 
-Branch on `code`, not on the message text. Codes change only in major releases, while message text may change in any release:
+Branch on `code`, not on the message text. Existing codes change only in major releases, while message text may change in any release:
 
 | Code                             | Reason                                                           |
 | -------------------------------- | ---------------------------------------------------------------- |
@@ -546,12 +545,13 @@ CI runs the test suite on Node.js 22, 24, and 26, on Bun 1.2.23 and the latest B
 
 ## Versioning
 
-`svg-serde` follows [semantic versioning](https://semver.org/). Until version 1.0, the object model may still change:
+`svg-serde` follows [semantic versioning](https://semver.org/):
 
-- **0.x minor releases** (0.2 to 0.3) may contain breaking changes, which the release notes list.
-- **0.x patch releases** (0.2.0 to 0.2.1) contain only fixes and compatible additions.
+- **Major releases** contain breaking changes, which the release notes list with migration steps. These include changing the object model or exported types, changing or removing an error code, raising the minimum supported runtime versions, and adding a node type, since it breaks exhaustive `switch` statements over `node.type`.
+- **Minor releases** add features compatible with existing code, such as new options or new error codes. Handle unknown codes in a `default` branch when switching over `error.code`.
+- **Patch releases** contain only fixes. Rejecting input that is not well-formed XML but was accepted by mistake counts as a fix.
 
-From version 1.0, breaking changes require a major release. This includes adding a node type, because it breaks exhaustive `switch` statements over `node.type`. Raising the minimum supported runtime versions is also a breaking change.
+Error message text may change in any release.
 
 Release notes are published on [GitHub Releases](https://github.com/hexlabelposition/svg-serde/releases).
 

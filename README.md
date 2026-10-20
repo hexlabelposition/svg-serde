@@ -2,7 +2,6 @@
 
 [![npm version](https://img.shields.io/npm/v/svg-serde)](https://www.npmjs.com/package/svg-serde)
 [![CI](https://github.com/hexlabelposition/svg-serde/actions/workflows/ci.yml/badge.svg)](https://github.com/hexlabelposition/svg-serde/actions/workflows/ci.yml)
-[![Release](https://github.com/hexlabelposition/svg-serde/actions/workflows/release.yml/badge.svg)](https://github.com/hexlabelposition/svg-serde/actions/workflows/release.yml)
 [![Types](https://img.shields.io/npm/types/svg-serde)](https://www.npmjs.com/package/svg-serde)
 [![License](https://img.shields.io/npm/l/svg-serde)](./LICENSE)
 
@@ -10,32 +9,29 @@
 
 `svg-serde` is a TypeScript-first library for working with SVG as structured data. It is designed for SVG editors, icon generators, asset pipelines, and tools that need to inspect, modify, or generate SVG without tying their data model to the browser DOM.
 
-```text
-SVG markup <-> JavaScript object tree
-```
-
 > [!NOTE]
 > **Early development.** Until version 1.0, the API and the object model may change in minor releases.
 
 ## Why svg-serde?
 
-Working with SVG often means working with XML strings or browser DOM nodes. `svg-serde` provides a small alternative: parse markup into ordinary JavaScript objects, make changes using familiar language features, and serialize the result back into SVG.
+Working with SVG often means working with XML strings or browser DOM nodes. `svg-serde` parses markup into ordinary JavaScript objects, lets you change them with familiar language features, and serializes the result back into SVG.
 
-The library focuses on one responsibility: **conversion between SVG markup and a structured object representation**. It does not attempt to be an editor, renderer, geometry toolkit, or SVG optimizer.
+- **Lossless round trips.** Element order, text, comments, processing instructions, the XML declaration, DOCTYPE, namespaces, and unknown elements or attributes all survive parsing and serialization.
+- **Strict parsing.** Only well-formed XML is accepted, and every error has a stable code and a source position.
+- **Safe for untrusted input.** External entities are never loaded, and input size, nesting depth, and entity expansion are limited.
+- **Plain data.** The tree has no classes, DOM nodes, or parent references, so it can be stored as JSON or sent to a worker.
+- **No implicit interpretation.** Attribute values stay strings, without evaluating CSS, units, or transforms.
+- **Small and portable.** No runtime dependencies, about 12 kB gzipped, and runs on Node.js, Bun, and in browsers.
+- **Fast.** Parsing is 4–6× faster than svgson and 2–3× faster than svg-parser on typical files. See [Performance](#performance).
 
-Compared with similar libraries, `svg-serde` focuses on strict XML parsing, safe handling of untrusted input, and lossless preservation of every supported XML construct. See [Comparison with alternatives](#comparison-with-alternatives).
+The library focuses on one responsibility: **conversion between SVG markup and a structured object representation**. The following are intentionally out of scope and can be handled by separate libraries:
 
-## Goals
-
-- **Bidirectional conversion.** Parse SVG markup and serialize an object tree back to SVG.
-- **Predictable round trips.** Preserve meaningful SVG content, including element order, text, comments, namespaces, and unknown elements or attributes.
-- **TypeScript-first API.** Provide helpful types without restricting custom SVG extensions.
-- **Plain JavaScript objects.** Keep the public representation independent of browser DOM nodes.
-- **Cross-runtime support.** Target Node.js, Bun, and modern browsers.
-- **Small, focused API.** Keep parsing and serialization simple and avoid unrelated SVG processing features.
-- **No implicit interpretation.** Keep attribute values as strings, without evaluating CSS, units, or transforms.
-- **Strict, standards-compliant parsing.** Accept only well-formed XML and report every error with a stable code and position.
-- **No runtime dependencies.** Include a strict XML parser built for this library, so installs stay small and behavior is fully under the project's control.
+- SVG rendering or DOM manipulation
+- Geometry, path calculations, and transform matrices
+- High-level attribute editing or CSS evaluation
+- SVG optimization and minification
+- Editor state, selection, layers, or undo/redo
+- Script execution and loading external resources, such as images or stylesheets
 
 ## Installation
 
@@ -156,6 +152,57 @@ parse(svg, { whitespace: "trim" });
 
 It removes exactly the whitespace that `pretty` replaces, by the same rules, so text and the content of the elements listed above stay unchanged.
 
+## API
+
+| Export                          | Description                                                                 |
+| ------------------------------- | --------------------------------------------------------------------------- |
+| `parse(svg, options?)`          | Parses an SVG string into an `SvgDocument`.                                 |
+| `stringify(document, options?)` | Serializes an `SvgDocument` to an SVG string.                               |
+| `getRoot(document)`             | Returns the root element of a document, without copying it.                 |
+| `SvgParseError`                 | The error thrown by `parse()`, with `code`, `line`, `column`, and `offset`. |
+
+### `parse(svg, options?)`
+
+| Option                | Default               | Description                                                                            |
+| --------------------- | --------------------- | -------------------------------------------------------------------------------------- |
+| `whitespace`          | `"preserve"`          | `"trim"` removes whitespace-only text between elements, by the same rules as `pretty`. |
+| `positions`           | `false`               | Adds a `position` with the source range to every node.                                 |
+| `maxInputLength`      | 67,108,864 characters | Longer input is rejected before parsing.                                               |
+| `maxDepth`            | 1,024                 | Maximum element nesting depth.                                                         |
+| `maxEntityExpansions` | 10,000                | Maximum number of entity references expanded in a document.                            |
+| `maxExpandedLength`   | 1,048,576 characters  | Maximum total length of text produced by entity expansion.                             |
+
+Throws an `SvgParseError` for malformed input or an exceeded limit, and a `RangeError` for an invalid `whitespace` option. See [Safety](#safety) for how the limits were chosen.
+
+### `stringify(document, options?)`
+
+| Option   | Default | Description                                                  |
+| -------- | ------- | ------------------------------------------------------------ |
+| `pretty` | `false` | Indents element-only content. Text content is never changed. |
+| `indent` | `2`     | Spaces per indentation level when `pretty` is `true`.        |
+
+Throws a `TypeError` for a tree that cannot be written as well-formed XML, and a `RangeError` when `indent` is not a non-negative integer. See [Errors](#errors).
+
+### `getRoot(document)`
+
+Returns the root element, usually `<svg>`. Editing the returned element changes the document. Throws a `TypeError` if a manually created or edited document has zero or more than one root element.
+
+### Types
+
+All types are exported for use with `import type`:
+
+| Type                                                                | Describes                                                      |
+| ------------------------------------------------------------------- | -------------------------------------------------------------- |
+| `SvgDocument`                                                       | A whole document, returned by `parse()`.                       |
+| `SvgElement`, `SvgElementName`, `SvgAttributes`                     | An element, its name, and its attributes.                      |
+| `SvgNode`                                                           | Any node inside an element.                                    |
+| `SvgDocumentChild`                                                  | Any node at the top level of a document.                       |
+| `SvgText`, `SvgCData`, `SvgComment`, `SvgInstruction`, `SvgDoctype` | The individual node types.                                     |
+| `XmlDeclaration`                                                    | The `<?xml ...?>` declaration.                                 |
+| `SvgPosition`, `SvgSourcePoint`                                     | Source ranges added with `positions: true`.                    |
+| `ParseOptions`, `StringifyOptions`                                  | Options of `parse()` and `stringify()`.                        |
+| `SvgParseErrorCode`, `SvgParseErrorDetails`                         | Error codes and the data used to construct an `SvgParseError`. |
+
 ## Examples
 
 The tree is plain data, so changes are ordinary JavaScript: assign or `delete` attributes, and add, remove, or reorder `children`. A small generator makes it easy to visit every element:
@@ -196,6 +243,11 @@ stringify(document);
 ```ts
 const isEditorName = (name: string) =>
   /^(xmlns:)?(inkscape|sodipodi)(:|$)/.test(name);
+
+// Comments before and after the root element.
+document.children = document.children.filter(
+  (child) => child.type !== "comment",
+);
 
 for (const element of elements(document)) {
   element.children = element.children.filter(
@@ -261,9 +313,7 @@ stringify(document, { pretty: true });
 
 ## Object model
 
-`parse()` returns an `SvgDocument`. Its `children` contain exactly one root element, plus any comments, processing instructions, DOCTYPE, and whitespace outside it.
-
-Use `getRoot(document)` to access that element:
+`parse()` returns an `SvgDocument`. Its `children` contain exactly one root element, plus any comments, processing instructions, DOCTYPE, and whitespace outside it. Use `getRoot(document)` to access the root element:
 
 ```ts
 import { parse, getRoot } from "svg-serde";
@@ -272,8 +322,6 @@ const document = parse('<svg viewBox="0 0 24 24"/>');
 const root = getRoot(document); // SvgElement
 root.attributes.fill = "currentColor";
 ```
-
-`getRoot()` returns the original element, so editing it changes the document. It throws a `TypeError` if a manually created or edited document has zero or multiple root elements. Like `parse()`, it accepts any root element name.
 
 ```ts
 interface SvgDocument {
@@ -368,12 +416,14 @@ This does **not** mean byte-for-byte reproduction of the original source. `strin
 
 - Attributes always use double quotes.
 - Elements without children are self-closing: `<g></g>` becomes `<g/>`.
-- Character and entity references are decoded when parsing and only `&`, `<`, `>`, and `"` are escaped when serializing, along with tabs and line breaks in attribute values.
+- Character and entity references are decoded when parsing. When serializing, only `&`, `<`, `>`, and, in attribute values, `"` are escaped, along with characters that a parser would otherwise normalize: carriage returns in text, and tabs and line breaks in attribute values.
 - Line breaks are normalized to `\n`, as XML requires.
+
+Each test run checks these guarantees on 11,782 icons from Simple Icons, Bootstrap Icons, and Tabler Icons, on the checked-in [SVG corpus](./test/fixtures/README.md) of Inkscape, Adobe Illustrator, and Figma exports and SVGO regression inputs, and with property-based tests on generated documents.
 
 ## Errors
 
-`parse()` throws an `SvgParseError` for malformed input. It has a stable `code`, such as `"MALFORMED_XML"` or `"MAX_DEPTH_EXCEEDED"`, and the `line`, `column`, and `offset` of the problem:
+`parse()` throws an `SvgParseError` for malformed input. It has a `code` and the `line`, `column`, and `offset` of the problem:
 
 ```ts
 import { parse, SvgParseError } from "svg-serde";
@@ -387,19 +437,22 @@ try {
 }
 ```
 
+Branch on `code`, not on the message text. Codes change only in major releases, while message text may change in any release:
+
+| Code                             | Reason                                                           |
+| -------------------------------- | ---------------------------------------------------------------- |
+| `MALFORMED_XML`                  | The input is not well-formed XML.                                |
+| `MISSING_ROOT`                   | The document has no root element.                                |
+| `UNDECLARED_PREFIX`              | An element or attribute uses an undeclared namespace prefix.     |
+| `UNDEFINED_ENTITY`               | A reference to an entity that is not declared.                   |
+| `EXTERNAL_ENTITY`                | A reference to an external entity, which is never loaded.        |
+| `UNSUPPORTED_ENTITY`             | A reference to an entity whose replacement text contains markup. |
+| `MAX_INPUT_LENGTH_EXCEEDED`      | The input is longer than `maxInputLength`.                       |
+| `MAX_DEPTH_EXCEEDED`             | Elements are nested deeper than `maxDepth`.                      |
+| `MAX_ENTITY_EXPANSIONS_EXCEEDED` | More entity references than `maxEntityExpansions`.               |
+| `MAX_EXPANDED_LENGTH_EXCEEDED`   | Expanded entity text longer than `maxExpandedLength`.            |
+
 `stringify()` throws a `TypeError` for a tree that cannot be written as well-formed XML: an invalid name or character, an attribute value that is not a string, a comment containing `--`, a processing instruction containing `?>`, or a document without exactly one root element. Such trees can only come from code that builds or edits the tree, never from `parse()`.
-
-## Runtime support
-
-`svg-serde` is an ESM-only package with TypeScript declarations. It targets:
-
-- Node.js 22 or later
-- Bun 1.2 or later
-- Browsers that support ES2022
-
-CI runs the test suite on Node.js 22, 24, and 26, on Bun 1.2.23 and the latest Bun release, and in Chromium, Firefox, and WebKit.
-
-The package has no runtime dependencies: it includes its own strict XML parser.
 
 ## Safety
 
@@ -453,33 +506,43 @@ Parsing SVG into an object tree does **not** make arbitrary SVG safe to render i
 
 svgson can also transform nodes while parsing, and svg-parser produces a [hast](https://github.com/syntax-tree/hast)-like tree. Choose svg-serde when the tree has to be written back without losing or changing data.
 
-## Benchmarks
+### Performance
 
-Run `bun run bench` for Node.js or `bun run bench:bun` for Bun. The suite measures parsing, serialization, and full round trips using the built package, with comparisons against `svgson` and `svg-parser` where supported.
+Median latency on Node.js 26.8.1, with how many times longer each library takes than svg-serde in parentheses.
 
-See the [benchmark guide](./scripts/benchmarks/README.md) for inputs, sampling settings, JSON reports, and comparison limitations. Claims about speed or package size in this project are backed by these reproducible measurements.
+Parsing:
 
-## Scope
+| Input                        | svg-serde | svgson         | svg-parser     |
+| ---------------------------- | --------- | -------------- | -------------- |
+| Figma icon (435 bytes)       | 5.1 µs    | 30.5 µs (6.0×) | 14.3 µs (2.8×) |
+| Inkscape icon (3.8 kB)       | 55.5 µs   | 230 µs (4.1×)  | 133 µs (2.4×)  |
+| Illustrator file (752 bytes) | 9.1 µs    | 52.4 µs (5.8×) | 19.9 µs (2.2×) |
+| 1,000 groups (92 kB)         | 1.3 ms    | 7.2 ms (5.7×)  | 4.0 ms (3.1×)  |
+| 10,000 groups (937 kB)       | 14.7 ms   | 74.9 ms (5.1×) | 43.5 ms (3.0×) |
+| One 1.1 MB path              | 642 µs    | 106 ms (165×)  | 71.2 ms (111×) |
 
-`svg-serde` handles:
+Round trip, parsing and serializing again:
 
-- SVG parsing and serialization
-- Element hierarchy and child ordering
-- Attributes and namespace-qualified names
-- Text, CDATA, comments, processing instructions, XML declarations, and DOCTYPE declarations
-- Correct XML escaping and well-formedness checks
-- Predictable errors for invalid input
+| Input                        | svg-serde | svgson         |
+| ---------------------------- | --------- | -------------- |
+| Figma icon (435 bytes)       | 10.7 µs   | 39.0 µs (3.6×) |
+| Inkscape icon (3.8 kB)       | 92.1 µs   | 285 µs (3.1×)  |
+| Illustrator file (752 bytes) | 17.6 µs   | 61.5 µs (3.5×) |
+| 1,000 groups (92 kB)         | 2.4 ms    | 9.7 ms (4.0×)  |
+| 10,000 groups (937 kB)       | 29.8 ms   | 109 ms (3.7×)  |
+| One 1.1 MB path              | 1.3 ms    | 112 ms (86×)   |
 
-The following are intentionally **out of scope**:
+`stringify()` alone is 1.2–3.3× faster than svgson's on these inputs, except for the single 1.1 MB attribute, where svgson's serializer is about 8× faster: svg-serde also checks that every character is allowed in XML, while svgson only replaces special characters. The libraries do different work, so these numbers compare end-to-end API costs, not equivalent output. Run `bun run bench` for Node.js or `bun run bench:bun` for Bun, and see the [benchmark guide](./scripts/benchmarks/README.md) for inputs, methodology, and limitations.
 
-- SVG rendering or DOM manipulation
-- Geometry, path calculations, and transform matrices
-- High-level attribute editing or CSS evaluation
-- SVG optimization and minification
-- Editor state, selection, layers, or undo/redo
-- Script execution and loading external resources, such as images or stylesheets
+## Runtime support
 
-These tasks can be handled by separate libraries without making `svg-serde` depend on them.
+`svg-serde` is an ESM-only package with TypeScript declarations. It targets:
+
+- Node.js 22 or later
+- Bun 1.2 or later
+- Browsers that support ES2022
+
+CI runs the test suite on Node.js 22, 24, and 26, on Bun 1.2.23 and the latest Bun release, and in Chromium, Firefox, and WebKit.
 
 ## Versioning
 
@@ -492,15 +555,9 @@ From version 1.0, breaking changes require a major release. This includes adding
 
 Release notes are published on [GitHub Releases](https://github.com/hexlabelposition/svg-serde/releases).
 
-## Project status
-
-`parse()` and `stringify()` are implemented and tested with unit tests, property-based tests, and more than 11,000 real-world icons. The checked-in [SVG corpus](./test/fixtures/README.md) also covers Inkscape, Adobe Illustrator, and Figma exports, plus selected SVGO regression inputs.
-
-Ideas for new features are discussed in [GitHub Issues](https://github.com/hexlabelposition/svg-serde/issues).
-
 ## Contributing
 
-Feedback, bug reports, and design discussions are welcome through [GitHub Issues](https://github.com/hexlabelposition/svg-serde/issues). See [CONTRIBUTING.md](./CONTRIBUTING.md) for the development setup, conventions, and the release process.
+Feedback, bug reports, feature ideas, and design discussions are welcome through [GitHub Issues](https://github.com/hexlabelposition/svg-serde/issues). See [CONTRIBUTING.md](./CONTRIBUTING.md) for the development setup, conventions, and the release process.
 
 ## License
 

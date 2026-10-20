@@ -93,6 +93,50 @@ and a few editor exports cannot represent every SVG workload. Use the corpus
 and property tests to validate correctness when optimizing. This suite measures
 latency and throughput; memory usage needs separate profiling.
 
+## Comparison results
+
+Median latencies from one run of `bun run bench` on Node.js 26.8.1, with
+svg-serde built from commit `4c89042`, svgson 5.3.1, and svg-parser 2.1.0.
+Parentheses show how many times longer a library takes than svg-serde.
+
+Parse:
+
+| Input                         | svg-serde | svgson         | svg-parser     |
+| ----------------------------- | --------- | -------------- | -------------- |
+| `figma/wallet`                | 5.1 µs    | 30.5 µs (6.0×) | 14.3 µs (2.8×) |
+| `inkscape/emblem-pause`       | 55.5 µs   | 230 µs (4.1×)  | 133 µs (2.4×)  |
+| `illustrator/circle-and-text` | 9.1 µs    | 52.4 µs (5.8×) | 19.9 µs (2.2×) |
+| `generated/1000-rectangles`   | 1.3 ms    | 7.2 ms (5.7×)  | 4.0 ms (3.1×)  |
+| `generated/10000-rectangles`  | 14.7 ms   | 74.9 ms (5.1×) | 43.5 ms (3.0×) |
+| `generated/large-path`        | 642 µs    | 106 ms (165×)  | 71.2 ms (111×) |
+
+Stringify:
+
+| Input                         | svg-serde | svgson          |
+| ----------------------------- | --------- | --------------- |
+| `figma/wallet`                | 4.8 µs    | 7.4 µs (1.5×)   |
+| `inkscape/emblem-pause`       | 30.8 µs   | 46.2 µs (1.5×)  |
+| `illustrator/circle-and-text` | 7.3 µs    | 8.4 µs (1.2×)   |
+| `generated/1000-rectangles`   | 1.0 ms    | 3.0 ms (3.0×)   |
+| `generated/10000-rectangles`  | 10.5 ms   | 34.5 ms (3.3×)  |
+| `generated/large-path`        | 653 µs    | 80.1 µs (0.12×) |
+
+Round trip:
+
+| Input                         | svg-serde | svgson         |
+| ----------------------------- | --------- | -------------- |
+| `figma/wallet`                | 10.7 µs   | 39.0 µs (3.6×) |
+| `inkscape/emblem-pause`       | 92.1 µs   | 285 µs (3.1×)  |
+| `illustrator/circle-and-text` | 17.6 µs   | 61.5 µs (3.5×) |
+| `generated/1000-rectangles`   | 2.4 ms    | 9.7 ms (4.0×)  |
+| `generated/10000-rectangles`  | 29.8 ms   | 109 ms (3.7×)  |
+| `generated/large-path`        | 1.3 ms    | 112 ms (86×)   |
+
+On `generated/large-path`, svgson serializes the single 1.1 MB attribute about
+8× faster, since svg-serde also checks that every character is allowed in XML.
+These results are the source of the performance figures in the main README.
+Repeat the run on your own hardware before relying on exact ratios.
+
 ## XML character validation optimization
 
 The XML character validator now matches forbidden code points directly instead

@@ -27,7 +27,7 @@ import type {
   SvgDocumentChild,
   SvgElement,
   SvgNode,
-  SvgPoint,
+  SvgSourcePoint,
   XmlDeclaration,
 } from "./types";
 import { trimWhitespace } from "./whitespace";
@@ -268,7 +268,7 @@ export function parse(svg: string, options: ParseOptions = {}): SvgDocument {
   // Children of the innermost open element, or of the document.
   let siblings: (SvgNode | SvgDocumentChild)[] = children;
   const stack: SvgElement[] = [];
-  const elementStarts: SvgPoint[] = [];
+  const elementStarts: SvgSourcePoint[] = [];
   let sawRoot = false;
   let closedRoot = false;
   let sawDoctype = false;

@@ -2,8 +2,8 @@ import type {
   SvgDocument,
   SvgDocumentChild,
   SvgNode,
-  SvgPoint,
   SvgPosition,
+  SvgSourcePoint,
 } from "../src/index";
 
 /**
@@ -23,7 +23,7 @@ export function checkPositions(
     lineStarts.push(match.index + match[0].length);
   }
 
-  const checkPoint = (point: SvgPoint): string | undefined => {
+  const checkPoint = (point: SvgSourcePoint): string | undefined => {
     let line = 0;
     for (let low = 0, high = lineStarts.length - 1; low <= high;) {
       const middle = (low + high) >> 1;

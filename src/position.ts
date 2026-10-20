@@ -1,4 +1,4 @@
-import type { SvgPoint } from "./types";
+import type { SvgSourcePoint } from "./types";
 
 /**
  * Returns a function that computes the point of a character offset in
@@ -7,7 +7,7 @@ import type { SvgPoint } from "./types";
  */
 export function createPointTracker(
   source: string,
-): (offset: number) => SvgPoint {
+): (offset: number) => SvgSourcePoint {
   let index = 0;
   let line = 1;
   let lineStart = 0;

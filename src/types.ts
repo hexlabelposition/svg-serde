@@ -150,14 +150,14 @@ export type SvgDocumentChild =
   SvgElement | SvgText | SvgComment | SvgInstruction | SvgDoctype;
 
 /**
- * A location in the source string.
+ * A location in the parsed source string, not a coordinate in the drawing.
  *
  * `offset` is the 0-based index in the string, counted in UTF-16 code units
  * like JavaScript string indexes. `line` and `column` are 1-based; `column`
  * counts code units from the start of the line, and `"\r\n"`, `"\r"`, and
  * `"\n"` each end a line.
  */
-export interface SvgPoint {
+export interface SvgSourcePoint {
   line: number;
   column: number;
   offset: number;
@@ -175,8 +175,8 @@ export interface SvgPoint {
  * they are not updated when the tree changes.
  */
 export interface SvgPosition {
-  start: SvgPoint;
-  end: SvgPoint;
+  start: SvgSourcePoint;
+  end: SvgSourcePoint;
 }
 
 /**

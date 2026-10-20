@@ -140,7 +140,7 @@ function stringifyNode(
       return stringifyElement(node, indent, prefix);
     case "text":
       assertChars(node.value, "text");
-      return node.value.replace(TEXT_SPECIAL_CHARS, escapeChar);
+      return escapeText(node.value);
     case "cdata":
       assertChars(node.value, "CDATA section");
       // "]]>" cannot appear inside a CDATA section, so split the section
@@ -175,7 +175,7 @@ function stringifyElement(
       );
     }
     assertChars(value, "attribute", name);
-    output += ` ${name}="${value.replace(ATTRIBUTE_SPECIAL_CHARS, escapeChar)}"`;
+    output += ` ${name}="${escapeAttribute(value)}"`;
   }
 
   if (indent !== undefined && isElementOnly(element)) {
@@ -262,6 +262,44 @@ const ESCAPES: Record<string, string> = {
 
 function escapeChar(char: string): string {
   return ESCAPES[char] ?? char;
+}
+
+/**
+ * Values longer than this are checked for special characters with
+ * `indexOf()`, which engines run with vectorized native code, before
+ * escaping. A character class makes the engine test every character in turn,
+ * which is several times slower on long values that need no escaping, such
+ * as path data. Short values are faster with a single regular expression.
+ */
+const LONG_VALUE = 256;
+
+function escapeText(value: string): string {
+  if (
+    value.length > LONG_VALUE &&
+    !value.includes("&") &&
+    !value.includes("<") &&
+    !value.includes(">") &&
+    !value.includes("\r")
+  ) {
+    return value;
+  }
+  return value.replace(TEXT_SPECIAL_CHARS, escapeChar);
+}
+
+function escapeAttribute(value: string): string {
+  if (
+    value.length > LONG_VALUE &&
+    !value.includes("&") &&
+    !value.includes("<") &&
+    !value.includes(">") &&
+    !value.includes('"') &&
+    !value.includes("\t") &&
+    !value.includes("\n") &&
+    !value.includes("\r")
+  ) {
+    return value;
+  }
+  return value.replace(ATTRIBUTE_SPECIAL_CHARS, escapeChar);
 }
 
 /**

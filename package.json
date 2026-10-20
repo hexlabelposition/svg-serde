@@ -1,57 +1,14 @@
 {
   "name": "svg-serde",
   "version": "0.4.0",
-  "description": "Lightweight, type-safe SVG serialization and deserialization for JavaScript and TypeScript",
-  "license": "MIT",
   "author": {
     "name": "Vladyslav Kudriashov",
     "email": "hexlabelposition@gmail.com",
     "url": "https://hexlabelposition.dev/"
   },
-  "keywords": [
-    "svg",
-    "xml",
-    "parser",
-    "serializer",
-    "ast",
-    "round-trip"
-  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/hexlabelposition/svg-serde.git"
-  },
-  "homepage": "https://github.com/hexlabelposition/svg-serde#readme",
-  "bugs": {
-    "url": "https://github.com/hexlabelposition/svg-serde/issues"
-  },
-  "type": "module",
-  "exports": {
-    ".": "./dist/index.js",
-    "./package.json": "./package.json"
-  },
-  "files": [
-    "dist"
-  ],
-  "sideEffects": false,
-  "engines": {
-    "node": ">=22.0.0"
-  },
-  "scripts": {
-    "build": "tsdown",
-    "generate": "bun scripts/generate-known-names.ts",
-    "lint": "eslint",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
-    "typecheck": "tsc && tsc -p test && tsc -p scripts",
-    "test": "vitest run --project node",
-    "test:bun": "bun --bun vitest run --project node",
-    "test:browser": "vitest run --project 'browser (*)'",
-    "test:watch": "vitest --project node",
-    "bench": "bun run build && vitest bench --run --config scripts/benchmarks/vitest.config.ts",
-    "bench:bun": "bun run build && bun --bun vitest bench --run --config scripts/benchmarks/vitest.config.ts"
-  },
-  "dependencies": {
-    "saxes": "^6.0.0"
   },
   "devDependencies": {
     "@arethetypeswrong/core": "^0.18.5",
@@ -77,5 +34,45 @@
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.71.2",
     "vitest": "^5.0.5"
-  }
+  },
+  "exports": {
+    ".": "./dist/index.js",
+    "./package.json": "./package.json"
+  },
+  "bugs": {
+    "url": "https://github.com/hexlabelposition/svg-serde/issues"
+  },
+  "description": "Lightweight, type-safe SVG serialization and deserialization for JavaScript and TypeScript",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "files": [
+    "dist"
+  ],
+  "homepage": "https://github.com/hexlabelposition/svg-serde#readme",
+  "keywords": [
+    "svg",
+    "xml",
+    "parser",
+    "serializer",
+    "ast",
+    "round-trip"
+  ],
+  "license": "MIT",
+  "scripts": {
+    "build": "tsdown",
+    "generate": "bun scripts/generate-known-names.ts",
+    "lint": "eslint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc && tsc -p test && tsc -p scripts",
+    "test": "vitest run --project node",
+    "test:bun": "bun --bun vitest run --project node",
+    "test:browser": "vitest run --project 'browser (*)'",
+    "test:watch": "vitest --project node",
+    "bench": "bun run build && vitest bench --run --config scripts/benchmarks/vitest.config.ts",
+    "bench:bun": "bun run build && bun --bun vitest bench --run --config scripts/benchmarks/vitest.config.ts"
+  },
+  "sideEffects": false,
+  "type": "module"
 }

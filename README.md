@@ -34,7 +34,8 @@ Compared with similar libraries, `svg-serde` focuses on strict XML parsing, safe
 - **Cross-runtime support.** Target Node.js, Bun, and modern browsers.
 - **Small, focused API.** Keep parsing and serialization simple and avoid unrelated SVG processing features.
 - **No implicit interpretation.** Keep attribute values as strings, without evaluating CSS, units, or transforms.
-- **Correctness over zero dependencies.** Rely on a proven XML parser instead of a custom one that could compromise correctness or security.
+- **Strict, standards-compliant parsing.** Accept only well-formed XML and report every error with a stable code and position.
+- **No runtime dependencies.** Include a strict XML parser built for this library, so installs stay small and behavior is fully under the project's control.
 
 ## Installation
 
@@ -400,7 +401,7 @@ try {
 
 CI runs the test suite on Node.js 22, 24, and 26, on Bun 1.2.23 and the latest Bun release, and in Chromium, Firefox, and WebKit.
 
-The only runtime dependency is [saxes](https://github.com/lddubeau/saxes), a strict XML parser. It is an internal detail and may be replaced without a breaking change.
+The package has no runtime dependencies: it includes its own strict XML parser.
 
 ## Safety
 

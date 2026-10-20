@@ -152,4 +152,7 @@ Speedups are relative to commit `5c2157e`, measured on Node.js 26.8.1 and
 Bun 1.4.0. The large path has a single attribute, so neither change
 applies to it. Disabling the saxes namespace mode would save about another 10%
 of parse time, but svg-serde would then have to reimplement namespace
-well-formedness checks, so the mode is kept.
+well-formedness checks, so the mode was kept.
+
+saxes has since been replaced by a built-in tokenizer, so the profile above
+describes the parser as it was at the time.

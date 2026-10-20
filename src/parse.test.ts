@@ -274,7 +274,7 @@ describe("parse", () => {
       expect(parseError(svg).code).toBe(code);
     });
 
-    test("rejects unpaired surrogates that saxes accepts", () => {
+    test("rejects unpaired surrogates in comments", () => {
       const error = parseError("<svg>\n<!--\uD835a--></svg>");
       expect(error.code).toBe("MALFORMED_XML");
       expect(error.message).toBe("Invalid character U+D835 (line 2, column 5)");
@@ -290,7 +290,6 @@ describe("parse", () => {
       expect(error.message).toMatch(
         /^Unexpected close tag \(line 3, column \d+\)$/,
       );
-      expect(error.cause).toBeInstanceOf(Error);
     });
   });
 

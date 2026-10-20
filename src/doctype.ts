@@ -40,8 +40,8 @@ const CHAR_REFERENCE = /^#(?:x[0-9a-fA-F]+|[0-9]+)$/;
 /**
  * Collects general entity declarations from the internal subset of a DOCTYPE.
  *
- * `doctype` is the DOCTYPE content as reported by saxes, which has already
- * checked where the declaration ends. Other markup declarations, comments,
+ * `doctype` is the DOCTYPE content after the `DOCTYPE` keyword, whose end
+ * `parse()` has already found. Other markup declarations, comments,
  * and processing instructions in the subset are skipped. As XML requires
  * from processors that do not read external declarations, entity
  * declarations after a parameter entity reference are ignored.

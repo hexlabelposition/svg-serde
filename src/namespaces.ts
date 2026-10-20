@@ -1,5 +1,6 @@
 /**
- * Namespaces bound by Namespaces in XML: https://www.w3.org/TR/xml-names/#ns-decl
+ * Namespaces reserved by Namespaces in XML for the `xml` and `xmlns` prefixes:
+ * https://www.w3.org/TR/xml-names/#ns-decl
  */
 export const XML_NAMESPACE = "http://www.w3.org/XML/1998/namespace";
 export const XMLNS_NAMESPACE = "http://www.w3.org/2000/xmlns/";

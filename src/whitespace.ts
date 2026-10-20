@@ -1,5 +1,8 @@
 import type { SvgDocumentChild, SvgElement, SvgNode } from "./types";
 
+/**
+ * Matches strings that are empty or contain only XML whitespace.
+ */
 export const WHITESPACE: RegExp = /^[ \t\r\n]*$/;
 
 /**

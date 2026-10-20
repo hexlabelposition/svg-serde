@@ -11,7 +11,8 @@ export type SvgElementName = string;
  *
  * Keys are qualified names including any prefix (`"xlink:href"`), and
  * namespace declarations (`"xmlns"`, `"xmlns:xlink"`) are ordinary attributes.
- * Values are always strings with character and entity references decoded.
+ * Values are always strings with character and entity references decoded,
+ * and with tabs and line breaks replaced by spaces as XML requires.
  * Key order matches source order and is kept by `stringify()`.
  *
  * Read and change attributes as a plain object: `el.attributes.fill = "red"`,
@@ -32,7 +33,7 @@ export interface XmlDeclaration {
 }
 
 /**
- * Root of a parsed document, returned by `parse()` and accepted by `stringify()`.
+ * A whole document, returned by `parse()` and accepted by `stringify()`.
  *
  * Holds everything outside the root `<svg>` element as well, such as the XML
  * declaration, DOCTYPE, and top-level comments, so they survive a round trip.
@@ -188,7 +189,8 @@ export interface SvgPosition {
 export interface ParseOptions {
   /**
    * Maximum input length in characters, checked before parsing.
-   * Defaults to 67,108,864 (64 MiB).
+   * Counted in UTF-16 code units, like `string.length`.
+   * Defaults to 67,108,864 (64 × 1024²).
    */
   maxInputLength?: number;
   /**
@@ -205,7 +207,8 @@ export interface ParseOptions {
   /**
    * Maximum total length of text produced by entity expansion.
    * Protects against entity expansion attacks ("billion laughs").
-   * Defaults to 1,048,576 (1 MiB).
+   * Counted in UTF-16 code units, like `string.length`.
+   * Defaults to 1,048,576 (1024²).
    */
   maxExpandedLength?: number;
   /**

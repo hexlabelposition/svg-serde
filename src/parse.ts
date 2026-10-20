@@ -53,10 +53,11 @@ const DEFAULT_MAX_DEPTH = 1024;
 const DEFAULT_MAX_ENTITY_EXPANSIONS = 10_000;
 const DEFAULT_MAX_EXPANDED_LENGTH = 1024 * 1024;
 
+// Line breaks, normalized to "\n". XML 1.1 also counts U+0085 and U+2028.
 const LINE_BREAK = /\r\n?/g;
 const LINE_BREAK_11 = /\r[\n\u0085]?|[\u0085\u2028]/g;
-// Attribute value normalization: each line break, tab, or newline becomes a
-// space, after line breaks are normalized.
+// Attribute value normalization: each tab and each line break, with "\r\n"
+// counted as one, becomes a space.
 const ATTRIBUTE_WHITESPACE = /\r\n?|[\t\n]/g;
 const ATTRIBUTE_WHITESPACE_11 = /\r[\n\u0085]?|[\t\n\u0085\u2028]/g;
 const LEADING_WHITESPACE = /^[ \t\n]+/;
@@ -65,8 +66,9 @@ const LEADING_WHITESPACE = /^[ \t\n]+/;
  * Parses an SVG string into a document.
  *
  * The input must be well-formed XML with exactly one root element. Names,
- * attribute values, and text are kept as written, with character and entity
- * references decoded and line breaks normalized to `"\n"` as XML requires.
+ * attribute values, and text are kept as written, except as XML requires:
+ * character and entity references are decoded, line breaks become `"\n"`,
+ * and tabs and line breaks in attribute values become spaces.
  * Entities declared in the DOCTYPE internal subset are expanded; external
  * entities and external DTDs are never loaded.
  *
@@ -351,23 +353,24 @@ export function parse(svg: string, options: ParseOptions = {}): SvgDocument {
       // End tag. Comparing the name in place avoids slicing it.
       const element = stack.at(-1);
       if (element === undefined) {
-        return fail("Unexpected close tag", i + 2);
+        return fail("Unexpected end tag", i + 2);
       }
       const { name } = element;
       let j = i + 2 + name.length;
+      // The name must end here, so that `</gg>` does not close `<g>`.
       const after = svg.charCodeAt(j);
       if (
         !svg.startsWith(name, i + 2) ||
         after >= 0x80 ||
         (NAME_TABLE[after] ?? 0) !== 0
       ) {
-        fail("Unexpected close tag", i + 2);
+        fail("Unexpected end tag", i + 2);
       }
       while (isWhitespace(svg.charCodeAt(j))) {
         j++;
       }
       if (svg.charCodeAt(j) !== GT) {
-        fail("Expected > at the end of the close tag", j);
+        fail("Expected > after the end tag name", j);
       }
       i = j + 1;
 
@@ -578,6 +581,7 @@ export function parse(svg: string, options: ParseOptions = {}): SvgDocument {
       if (nextAmp < valueStart) {
         nextAmp = find("&", valueStart);
       }
+      // Values are normalized only when they contain a tab or a line break.
       if (nextTab < valueStart) {
         nextTab = find("\t", valueStart);
       }

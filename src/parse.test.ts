@@ -288,7 +288,7 @@ describe("parse", () => {
       expect(error.column).toBeGreaterThan(1);
       expect(error.offset).toBeGreaterThan(10);
       expect(error.message).toMatch(
-        /^Unexpected close tag \(line 3, column \d+\)$/,
+        /^Unexpected end tag \(line 3, column \d+\)$/,
       );
     });
   });

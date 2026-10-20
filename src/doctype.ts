@@ -31,13 +31,18 @@ export type EntityDeclaration =
       type: "external";
     };
 
+// Patterns for the part of a declaration after `<!ENTITY`. `S` is the XML
+// whitespace production.
 const S = "[ \\t\\r\\n]";
 const QUOTED = `(?:"[^"]*"|'[^']*')`;
 
+// `% name ...`
 const PARAMETER_ENTITY = new RegExp(`^${S}+%${S}`);
+// `name "value"`
 const INTERNAL_ENTITY = new RegExp(
   `^${S}+([^ \\t\\r\\n%"'>]+)${S}+(?:"([^"]*)"|'([^']*)')${S}*$`,
 );
+// `name SYSTEM "uri"` or `name PUBLIC "id" "uri"`, optionally with `NDATA`.
 const EXTERNAL_ENTITY = new RegExp(
   `^${S}+([^ \\t\\r\\n%"'>]+)${S}+` +
     `(?:SYSTEM${S}+${QUOTED}|PUBLIC${S}+${QUOTED}${S}+${QUOTED})` +
@@ -52,7 +57,7 @@ const WHITESPACE = /[ \t\r\n]/;
  * `doctype` is the DOCTYPE content after the `DOCTYPE` keyword, whose end
  * `parse()` has already found. Other markup declarations, comments,
  * and processing instructions in the subset are skipped. As XML requires
- * from processors that do not read external declarations, entity
+ * of processors that do not read external declarations, entity
  * declarations after a parameter entity reference are ignored.
  */
 export function parseEntityDeclarations(
@@ -219,6 +224,9 @@ function findDeclarationEnd(
   fail("Unterminated markup declaration in DOCTYPE");
 }
 
+/**
+ * Returns the index after the first `terminator` at or after `start`.
+ */
 function skipPast(
   doctype: string,
   start: number,
@@ -234,8 +242,8 @@ function skipPast(
 
 /**
  * Returns the offset of the `>` that ends a DOCTYPE whose content starts at
- * `start`, skipping quoted literals and the internal subset with the
- * comments and processing instructions in it.
+ * `start`, right after the `DOCTYPE` keyword. Skips quoted literals and the
+ * internal subset with the comments and processing instructions in it.
  */
 export function findDoctypeEnd(
   svg: string,
@@ -283,5 +291,6 @@ export function findDoctypeEnd(
       i++;
     }
   }
+  // Point at the "<!DOCTYPE" that starts the declaration.
   return fail("Unterminated DOCTYPE", start - 9);
 }

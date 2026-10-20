@@ -16,9 +16,9 @@ import { INVALID_CHAR, NAME } from "./xml";
  * By default, output is compact: no whitespace is added or removed, so text
  * nodes are written exactly as stored. With `pretty`, whitespace-only text in
  * element-only content is replaced with line breaks and indentation; text
- * content is never changed. Strings are escaped only where XML requires it,
- * attributes always use double quotes, and elements without children are
- * self-closing.
+ * content is never changed. Text and attribute values are escaped so that
+ * they parse back unchanged, attributes always use double quotes, and
+ * elements without children are self-closing.
  *
  * Throws a `TypeError` when the tree cannot be written as well-formed XML,
  * for example an invalid element name or a comment containing `--`, and a

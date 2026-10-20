@@ -411,12 +411,12 @@ The parser is designed to handle untrusted input:
 
 All limits have defaults, chosen by measuring real-world files:
 
-| Option                | Default             | Measured maximum                                |
-| --------------------- | ------------------- | ----------------------------------------------- |
-| `maxInputLength`      | 67,108,864 (64 MiB) | 90.8M characters; 99.9% of files are below 3.2M |
-| `maxDepth`            | 1,024               | 13 levels                                       |
-| `maxEntityExpansions` | 10,000              | 7 references                                    |
-| `maxExpandedLength`   | 1,048,576 (1 MiB)   | 242 characters                                  |
+| Option                | Default               | Measured maximum                                |
+| --------------------- | --------------------- | ----------------------------------------------- |
+| `maxInputLength`      | 67,108,864 characters | 90.8M characters; 99.9% of files are below 3.2M |
+| `maxDepth`            | 1,024                 | 13 levels                                       |
+| `maxEntityExpansions` | 10,000                | 7 references                                    |
+| `maxExpandedLength`   | 1,048,576 characters  | 242 characters                                  |
 
 The measurements cover 16,904 files: icon sets, KDE Oxygen icons exported from Inkscape and Adobe Illustrator, the W3C SVG 1.1 test suite, and large maps from Wikimedia Commons. Only one map exceeds a default limit. Lower the limits for tighter resource budgets, or raise `maxInputLength` for very large trusted files:
 

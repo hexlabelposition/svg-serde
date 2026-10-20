@@ -10,18 +10,17 @@ The project uses [Bun](https://bun.sh/) for installing dependencies and running 
 bun install
 ```
 
-| Command                | What it does                                                         |
-| ---------------------- | -------------------------------------------------------------------- |
-| `bun run lint`         | Lint with ESLint                                                     |
-| `bun run format`       | Format all files with Prettier (`format:check` only checks)          |
-| `bun run typecheck`    | Type-check the library, the tests, and the scripts                   |
-| `bun run test`         | Run unit, property-based, and corpus tests on Node.js                |
-| `bun run test:bun`     | Run the same tests on Bun                                            |
-| `bun run test:browser` | Run the tests in Chromium, Firefox, and WebKit                       |
-| `bun run test:watch`   | Run the tests on Node.js in watch mode                               |
-| `bun run build`        | Build `dist/` and validate the package with publint and attw         |
-| `bun run generate`     | Regenerate `src/known-names.ts` after updating the SVG name packages |
-| `bun run bench`        | Run benchmarks on Node.js (`bench:bun` for Bun)                      |
+| Command                | What it does                                                 |
+| ---------------------- | ------------------------------------------------------------ |
+| `bun run lint`         | Lint with ESLint                                             |
+| `bun run format`       | Format all files with Prettier (`format:check` only checks)  |
+| `bun run typecheck`    | Type-check the library, the tests, and the scripts           |
+| `bun run test`         | Run unit, property-based, and corpus tests on Node.js        |
+| `bun run test:bun`     | Run the same tests on Bun                                    |
+| `bun run test:browser` | Run the tests in Chromium, Firefox, and WebKit               |
+| `bun run test:watch`   | Run the tests on Node.js in watch mode                       |
+| `bun run build`        | Build `dist/` and validate the package with publint and attw |
+| `bun run bench`        | Run benchmarks on Node.js (`bench:bun` for Bun)              |
 
 Browser tests need Playwright's browsers and the system libraries they depend on:
 

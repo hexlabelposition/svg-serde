@@ -1,5 +1,4 @@
 import { describe, expect, expectTypeOf, test } from "vitest";
-import type { KnownSvgAttributeName, KnownSvgElementName } from "./known-names";
 import type { SvgAttributes, SvgDocument, SvgElementName } from "./types";
 
 const document = {
@@ -59,13 +58,7 @@ describe("object model", () => {
   });
 });
 
-describe("known names", () => {
-  test("include standard and namespace-qualified names", () => {
-    expectTypeOf<"linearGradient">().toExtend<KnownSvgElementName>();
-    expectTypeOf<"stroke-width">().toExtend<KnownSvgAttributeName>();
-    expectTypeOf<"xlink:href">().toExtend<KnownSvgAttributeName>();
-  });
-
+describe("names", () => {
   test("do not restrict element names", () => {
     expectTypeOf<"sodipodi:namedview">().toExtend<SvgElementName>();
     expectTypeOf<SvgElementName>().toExtend<string>();
@@ -80,8 +73,6 @@ describe("known names", () => {
     attributes.stroke = "blue";
     delete attributes.fill;
 
-    expectTypeOf<SvgAttributes["stroke"]>().toEqualTypeOf<string | undefined>();
-    expectTypeOf<SvgAttributes["data-id"]>().toEqualTypeOf<string>();
     expectTypeOf(Object.entries(attributes)).toEqualTypeOf<
       [string, string][]
     >();

@@ -26,9 +26,7 @@
     "prettier": "^3.9.10",
     "publint": "^0.3.25",
     "simple-icons": "^16.35.0",
-    "svg-element-attributes": "^2.2.0",
     "svg-parser": "2.1.0",
-    "svg-tag-names": "^3.0.1",
     "svgson": "5.3.1",
     "tsdown": "^0.23.1",
     "typescript": "^6.0.3",
@@ -61,7 +59,6 @@
   "license": "MIT",
   "scripts": {
     "build": "tsdown",
-    "generate": "bun scripts/generate-known-names.ts",
     "lint": "eslint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

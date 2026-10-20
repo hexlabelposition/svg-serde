@@ -1,13 +1,10 @@
-import type { KnownSvgAttributeName, KnownSvgElementName } from "./known-names";
-
 /**
  * Element name, stored exactly as written in the source, including any
  * namespace prefix (for example `"svg"`, `"linearGradient"`, `"sodipodi:namedview"`).
  *
  * Compare it with plain strings to find elements, e.g. `node.name === "path"`.
- * Standard SVG names are suggested by autocomplete, but any string is allowed.
  */
-export type SvgElementName = KnownSvgElementName | (string & {});
+export type SvgElementName = string;
 
 /**
  * Element attributes, stored exactly as written in the source.
@@ -19,10 +16,8 @@ export type SvgElementName = KnownSvgElementName | (string & {});
  *
  * Read and change attributes as a plain object: `el.attributes.fill = "red"`,
  * `delete el.attributes.style`. Values are written back escaped as needed.
- * Standard SVG names are suggested by autocomplete, but any key is allowed.
  */
-export type SvgAttributes = Partial<Record<KnownSvgAttributeName, string>> &
-  Record<string, string>;
+export type SvgAttributes = Record<string, string>;
 
 /**
  * The `<?xml ...?>` declaration at the start of a document.

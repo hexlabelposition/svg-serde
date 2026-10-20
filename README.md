@@ -312,8 +312,6 @@ The tree is plain data: no classes, no cycles, no parent references, and no `und
 
 Names are stored as written, including namespace prefixes, and namespace declarations such as `xmlns` and `xmlns:xlink` are ordinary attributes.
 
-`SvgElementName` and the keys of `SvgAttributes` accept any string, but your editor suggests standard SVG element and attribute names. The lists of standard names are exported as `KnownSvgElementName` and `KnownSvgAttributeName`, generated from [svg-tag-names](https://github.com/wooorm/svg-tag-names) and [svg-element-attributes](https://github.com/wooorm/svg-element-attributes).
-
 Attribute values are intentionally represented as strings:
 
 ```xml

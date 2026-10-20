@@ -1,6 +1,25 @@
-import { parseEntityDeclarations } from "./doctype";
+import {
+  BANG,
+  DQUOTE,
+  EQUAL,
+  GT,
+  HASH,
+  isWhitespace,
+  LOWER_X,
+  QUESTION,
+  SLASH,
+  SQUOTE,
+} from "./chars";
+import { parseDeclaration } from "./declaration";
+import { findDoctypeEnd, parseEntityDeclarations } from "./doctype";
 import { createEntityResolver } from "./entities";
 import { SvgParseError, type SvgParseErrorCode } from "./errors";
+import {
+  checkNamespace,
+  splitPrefix,
+  XML_NAMESPACE,
+  XMLNS_NAMESPACE,
+} from "./namespaces";
 import { createPointTracker } from "./position";
 import type {
   ParseOptions,
@@ -12,7 +31,7 @@ import type {
   XmlDeclaration,
 } from "./types";
 import { trimWhitespace } from "./whitespace";
-import { ENCODING, INVALID_CHAR, NAME, VERSION } from "./xml";
+import { INVALID_CHAR, isXmlChar, NAME, NAME_TABLE, scanName } from "./xml";
 
 /**
  * Default limits used by `parse()`.
@@ -33,47 +52,6 @@ const DEFAULT_MAX_INPUT_LENGTH = 64 * 1024 * 1024;
 const DEFAULT_MAX_DEPTH = 1024;
 const DEFAULT_MAX_ENTITY_EXPANSIONS = 10_000;
 const DEFAULT_MAX_EXPANDED_LENGTH = 1024 * 1024;
-
-const XML_NAMESPACE = "http://www.w3.org/XML/1998/namespace";
-const XMLNS_NAMESPACE = "http://www.w3.org/2000/xmlns/";
-
-const TAB = 0x09;
-const LF = 0x0a;
-const CR = 0x0d;
-const SPACE = 0x20;
-const BANG = 0x21;
-const DQUOTE = 0x22;
-const HASH = 0x23;
-const SQUOTE = 0x27;
-const SLASH = 0x2f;
-const EQUAL = 0x3d;
-const LT = 0x3c;
-const GT = 0x3e;
-const QUESTION = 0x3f;
-const OPEN_BRACKET = 0x5b;
-const CLOSE_BRACKET = 0x5d;
-const LOWER_X = 0x78;
-
-/**
- * ASCII part of the XML `Name` production as a lookup table: bit 1 marks
- * name characters, bit 2 marks characters that can also start a name.
- * Names with other characters are checked against the full `NAME` pattern.
- */
-const NAME_CHAR = 1;
-const NAME_START_CHAR = 2;
-const NAME_TABLE = new Uint8Array(128);
-for (let c = 0; c < 128; c++) {
-  if (
-    (c >= 0x41 && c <= 0x5a) ||
-    (c >= 0x61 && c <= 0x7a) ||
-    c === 0x5f ||
-    c === 0x3a
-  ) {
-    NAME_TABLE[c] = NAME_CHAR | NAME_START_CHAR;
-  } else if ((c >= 0x30 && c <= 0x39) || c === 0x2d || c === 0x2e) {
-    NAME_TABLE[c] = NAME_CHAR;
-  }
-}
 
 const LINE_BREAK = /\r\n?/g;
 const LINE_BREAK_11 = /\r[\n\u0085]?|[\u0085\u2028]/g;
@@ -732,247 +710,4 @@ export function parse(svg: string, options: ParseOptions = {}): SvgDocument {
   return declaration === undefined
     ? { type: "document", children }
     : { type: "document", declaration, children };
-}
-
-function isWhitespace(c: number): boolean {
-  return c === SPACE || c === LF || c === TAB || c === CR;
-}
-
-/**
- * The XML `Char` production: https://www.w3.org/TR/xml/#NT-Char
- */
-function isXmlChar(c: number): boolean {
-  return c >= 0x20
-    ? c <= 0xd7ff || (c >= 0xe000 && c <= 0xfffd) || c >= 0x10000
-    : c === TAB || c === LF || c === CR;
-}
-
-/**
- * Returns the end of the name starting at `start`, or `start` if no valid
- * name starts there.
- */
-function scanName(source: string, start: number): number {
-  const first = source.charCodeAt(start);
-  if (first >= 0x80) {
-    return scanUnicodeName(source, start);
-  }
-  // NaN at the end of the input reads as undefined.
-  if (((NAME_TABLE[first] ?? 0) & NAME_START_CHAR) === 0) {
-    return start;
-  }
-  for (let i = start + 1; ; i++) {
-    const c = source.charCodeAt(i);
-    if (c >= 0x80) {
-      return scanUnicodeName(source, start);
-    }
-    if ((NAME_TABLE[c] ?? 0) === 0) {
-      return i;
-    }
-  }
-}
-
-/**
- * Slow path of `scanName()` for names with non-ASCII characters.
- */
-function scanUnicodeName(source: string, start: number): number {
-  let i = start;
-  while (i < source.length) {
-    const c = source.charCodeAt(i);
-    if (c < 0x80 && NAME_TABLE[c] === 0) {
-      break;
-    }
-    i++;
-  }
-  return NAME.test(source.slice(start, i)) ? i : start;
-}
-
-/**
- * Splits a qualified name into prefix and local part.
- */
-function splitPrefix(
-  name: string,
-  offset: number,
-  fail: (message: string, offset: number) => never,
-): [string, string] {
-  const colon = name.indexOf(":");
-  if (
-    colon <= 0 ||
-    colon === name.length - 1 ||
-    name.includes(":", colon + 1)
-  ) {
-    fail(`Malformed name: ${name}`, offset);
-  }
-  return [name.slice(0, colon), name.slice(colon + 1)];
-}
-
-/**
- * Checks a namespace declaration as required by Namespaces in XML.
- */
-function checkNamespace(
-  prefix: string,
-  uri: string,
-  xml11: boolean,
-  fail: (message: string) => never,
-): void {
-  if (prefix === "xml" && uri !== XML_NAMESPACE) {
-    fail(`The xml prefix must be bound to ${XML_NAMESPACE}`);
-  }
-  if (prefix === "xmlns") {
-    fail('The "xmlns" prefix must not be declared');
-  }
-  if (uri === XMLNS_NAMESPACE) {
-    fail(`No prefix may be bound to ${XMLNS_NAMESPACE}`);
-  }
-  if (uri === XML_NAMESPACE && prefix !== "xml") {
-    fail(`Only the xml prefix may be bound to ${XML_NAMESPACE}`);
-  }
-  if (prefix !== "" && uri === "" && !xml11) {
-    fail(`Namespace prefix cannot be undeclared in XML 1.0: ${prefix}`);
-  }
-}
-
-/**
- * Parses the XML declaration at `start` and returns it with the offset after
- * its end.
- */
-function parseDeclaration(
-  svg: string,
-  start: number,
-  fail: (message: string, offset: number) => never,
-): { declaration: XmlDeclaration; end: number } {
-  const declaration: XmlDeclaration = { version: "" };
-  const names = ["version", "encoding", "standalone"];
-  let expected = 0;
-  let i = start + 5;
-
-  while (true) {
-    const whitespaceStart = i;
-    while (isWhitespace(svg.charCodeAt(i))) {
-      i++;
-    }
-    if (svg.startsWith("?>", i)) {
-      break;
-    }
-    if (i === whitespaceStart) {
-      fail("Whitespace required in XML declaration", i);
-    }
-
-    let nameEnd = i;
-    while (nameEnd < svg.length) {
-      const c = svg.charCodeAt(nameEnd);
-      if (c === EQUAL || c === QUESTION || isWhitespace(c)) {
-        break;
-      }
-      nameEnd++;
-    }
-    const name = svg.slice(i, nameEnd);
-    const index = names.indexOf(name, expected);
-    if (index === -1 || (expected === 0 && index !== 0)) {
-      fail(
-        expected === 0
-          ? "XML declaration must start with version"
-          : `Unexpected ${JSON.stringify(name)} in XML declaration`,
-        i,
-      );
-    }
-    expected = index + 1;
-
-    i = nameEnd;
-    while (isWhitespace(svg.charCodeAt(i))) {
-      i++;
-    }
-    if (svg.charCodeAt(i) !== EQUAL) {
-      fail("Value required in XML declaration", i);
-    }
-    i++;
-    while (isWhitespace(svg.charCodeAt(i))) {
-      i++;
-    }
-    const quote = svg.charAt(i);
-    if (quote !== '"' && quote !== "'") {
-      fail("XML declaration values must be quoted", i);
-    }
-    const valueEnd = svg.indexOf(quote, i + 1);
-    if (valueEnd === -1) {
-      fail("Unterminated XML declaration", start);
-    }
-    const value = svg.slice(i + 1, valueEnd);
-
-    if (name === "version") {
-      if (!VERSION.test(value)) {
-        fail("Version number must match /^1\\.[0-9]+$/", i);
-      }
-      declaration.version = value;
-    } else if (name === "encoding") {
-      if (!ENCODING.test(value)) {
-        fail("Encoding must match /^[A-Za-z][A-Za-z0-9._-]*$/", i);
-      }
-      declaration.encoding = value;
-    } else {
-      if (value !== "yes" && value !== "no") {
-        fail('Standalone must be "yes" or "no"', i);
-      }
-      declaration.standalone = value;
-    }
-    i = valueEnd + 1;
-  }
-
-  if (expected === 0) {
-    fail("XML declaration must contain a version", start);
-  }
-  return { declaration, end: i + 2 };
-}
-
-/**
- * Returns the offset of the `>` that ends a DOCTYPE whose content starts at
- * `start`, skipping quoted literals and the internal subset with the
- * comments and processing instructions in it.
- */
-function findDoctypeEnd(
-  svg: string,
-  start: number,
-  fail: (message: string, offset: number) => never,
-): number {
-  if (!isWhitespace(svg.charCodeAt(start))) {
-    fail("Whitespace required after DOCTYPE", start);
-  }
-  let inSubset = false;
-  let i = start;
-  while (i < svg.length) {
-    const c = svg.charCodeAt(i);
-    if (c === DQUOTE || c === SQUOTE) {
-      const end = svg.indexOf(c === DQUOTE ? '"' : "'", i + 1);
-      if (end === -1) {
-        break;
-      }
-      i = end + 1;
-    } else if (inSubset) {
-      if (c === CLOSE_BRACKET) {
-        inSubset = false;
-        i++;
-      } else if (c === LT && svg.startsWith("<!--", i)) {
-        const end = svg.indexOf("-->", i + 4);
-        if (end === -1) {
-          break;
-        }
-        i = end + 3;
-      } else if (c === LT && svg.charCodeAt(i + 1) === QUESTION) {
-        const end = svg.indexOf("?>", i + 2);
-        if (end === -1) {
-          break;
-        }
-        i = end + 2;
-      } else {
-        i++;
-      }
-    } else if (c === GT) {
-      return i;
-    } else {
-      if (c === OPEN_BRACKET) {
-        inSubset = true;
-      }
-      i++;
-    }
-  }
-  return fail("Unterminated DOCTYPE", start - 9);
 }

@@ -1,6 +1,6 @@
-import { charFromReference, type EntityDeclaration } from "./doctype";
+import type { EntityDeclaration } from "./doctype";
 import type { SvgParseErrorCode } from "./errors";
-import { CHAR_REFERENCE, PREDEFINED_ENTITIES } from "./xml";
+import { CHAR_REFERENCE, charFromReference, PREDEFINED_ENTITIES } from "./xml";
 
 export interface EntityLimits {
   maxEntityExpansions: number;

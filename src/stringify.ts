@@ -1,3 +1,4 @@
+import { stringifyDeclaration } from "./declaration";
 import type {
   SvgComment,
   SvgDocument,
@@ -5,10 +6,9 @@ import type {
   SvgInstruction,
   SvgNode,
   StringifyOptions,
-  XmlDeclaration,
 } from "./types";
 import { isElementOnly, WHITESPACE } from "./whitespace";
-import { ENCODING, INVALID_CHAR, NAME, VERSION } from "./xml";
+import { INVALID_CHAR, NAME } from "./xml";
 
 /**
  * Serializes a document to an SVG string.
@@ -95,35 +95,6 @@ function resolveIndent(options: StringifyOptions): string {
     );
   }
   return " ".repeat(indent);
-}
-
-function stringifyDeclaration(declaration: XmlDeclaration): string {
-  const { version, encoding, standalone } = declaration;
-
-  if (!VERSION.test(version)) {
-    throw new TypeError(`Invalid XML version: ${JSON.stringify(version)}`);
-  }
-  let output = `<?xml version="${version}"`;
-
-  if (encoding !== undefined) {
-    if (!ENCODING.test(encoding)) {
-      throw new TypeError(`Invalid XML encoding: ${JSON.stringify(encoding)}`);
-    }
-    output += ` encoding="${encoding}"`;
-  }
-
-  if (standalone !== undefined) {
-    // Trees built at runtime may hold any value despite the type.
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (standalone !== "yes" && standalone !== "no") {
-      throw new TypeError(
-        `Invalid XML standalone value: ${JSON.stringify(standalone)}`,
-      );
-    }
-    output += ` standalone="${standalone}"`;
-  }
-
-  return `${output}?>`;
 }
 
 /**

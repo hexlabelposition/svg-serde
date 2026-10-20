@@ -1,4 +1,19 @@
-import { CHAR_REFERENCE, INVALID_CHAR, NAME, PREDEFINED_ENTITIES } from "./xml";
+import {
+  CLOSE_BRACKET,
+  DQUOTE,
+  GT,
+  isWhitespace,
+  LT,
+  OPEN_BRACKET,
+  QUESTION,
+  SQUOTE,
+} from "./chars";
+import {
+  CHAR_REFERENCE,
+  charFromReference,
+  NAME,
+  PREDEFINED_ENTITIES,
+} from "./xml";
 
 /**
  * A general entity declared in the DOCTYPE internal subset.
@@ -154,29 +169,6 @@ function expandCharReferences(
   });
 }
 
-/**
- * Converts a character reference such as `#38` or `#x26` to its character.
- */
-export function charFromReference(
-  reference: string,
-  fail: (message: string) => never,
-): string {
-  const codePoint =
-    reference.charAt(1) === "x"
-      ? Number.parseInt(reference.slice(2), 16)
-      : Number.parseInt(reference.slice(1), 10);
-
-  if (codePoint > 0x10ffff) {
-    fail("Malformed character reference");
-  }
-
-  const char = String.fromCodePoint(codePoint);
-  if (INVALID_CHAR.test(char)) {
-    fail("Malformed character reference");
-  }
-  return char;
-}
-
 function validateName(name: string, fail: (message: string) => never): string {
   if (!NAME.test(name)) {
     fail(`Invalid entity name: ${JSON.stringify(name)}`);
@@ -238,4 +230,58 @@ function skipPast(
     fail("Malformed DOCTYPE internal subset");
   }
   return end + terminator.length;
+}
+
+/**
+ * Returns the offset of the `>` that ends a DOCTYPE whose content starts at
+ * `start`, skipping quoted literals and the internal subset with the
+ * comments and processing instructions in it.
+ */
+export function findDoctypeEnd(
+  svg: string,
+  start: number,
+  fail: (message: string, offset: number) => never,
+): number {
+  if (!isWhitespace(svg.charCodeAt(start))) {
+    fail("Whitespace required after DOCTYPE", start);
+  }
+  let inSubset = false;
+  let i = start;
+  while (i < svg.length) {
+    const c = svg.charCodeAt(i);
+    if (c === DQUOTE || c === SQUOTE) {
+      const end = svg.indexOf(c === DQUOTE ? '"' : "'", i + 1);
+      if (end === -1) {
+        break;
+      }
+      i = end + 1;
+    } else if (inSubset) {
+      if (c === CLOSE_BRACKET) {
+        inSubset = false;
+        i++;
+      } else if (c === LT && svg.startsWith("<!--", i)) {
+        const end = svg.indexOf("-->", i + 4);
+        if (end === -1) {
+          break;
+        }
+        i = end + 3;
+      } else if (c === LT && svg.charCodeAt(i + 1) === QUESTION) {
+        const end = svg.indexOf("?>", i + 2);
+        if (end === -1) {
+          break;
+        }
+        i = end + 2;
+      } else {
+        i++;
+      }
+    } else if (c === GT) {
+      return i;
+    } else {
+      if (c === OPEN_BRACKET) {
+        inSubset = true;
+      }
+      i++;
+    }
+  }
+  return fail("Unterminated DOCTYPE", start - 9);
 }

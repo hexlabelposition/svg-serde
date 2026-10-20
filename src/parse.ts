@@ -12,7 +12,7 @@ import type {
   XmlDeclaration,
 } from "./types";
 import { trimWhitespace } from "./whitespace";
-import { INVALID_CHAR, NAME } from "./xml";
+import { ENCODING, INVALID_CHAR, NAME, VERSION } from "./xml";
 
 /**
  * Default limits used by `parse()`.
@@ -82,8 +82,6 @@ const LINE_BREAK_11 = /\r[\n\u0085]?|[\u0085\u2028]/g;
 const ATTRIBUTE_WHITESPACE = /\r\n?|[\t\n]/g;
 const ATTRIBUTE_WHITESPACE_11 = /\r[\n\u0085]?|[\t\n\u0085\u2028]/g;
 const LEADING_WHITESPACE = /^[ \t\n]+/;
-const VERSION = /^1\.[0-9]+$/;
-const ENCODING = /^[A-Za-z][A-Za-z0-9._-]*$/;
 
 /**
  * Parses an SVG string into a document.

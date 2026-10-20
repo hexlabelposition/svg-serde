@@ -22,3 +22,31 @@ export const NAME: RegExp = new RegExp(
 export const INVALID_CHAR: RegExp =
   // eslint-disable-next-line no-control-regex -- XML 1.0 forbids these controls.
   /[\u0000-\u0008\u000B\u000C\u000E-\u001F\uD800-\uDFFF\uFFFE\uFFFF]/u;
+
+/**
+ * XML `VersionNum` production: https://www.w3.org/TR/xml/#NT-VersionNum
+ */
+export const VERSION: RegExp = /^1\.[0-9]+$/;
+
+/**
+ * XML `EncName` production: https://www.w3.org/TR/xml/#NT-EncName
+ */
+export const ENCODING: RegExp = /^[A-Za-z][A-Za-z0-9._-]*$/;
+
+/**
+ * Body of an XML `CharRef` between `&` and `;`:
+ * https://www.w3.org/TR/xml/#NT-CharRef
+ */
+export const CHAR_REFERENCE: RegExp = /^#(?:x[0-9a-fA-F]+|[0-9]+)$/;
+
+/**
+ * Entities predefined by XML and their replacement text:
+ * https://www.w3.org/TR/xml/#sec-predefined-ent
+ */
+export const PREDEFINED_ENTITIES: ReadonlyMap<string, string> = new Map([
+  ["lt", "<"],
+  ["gt", ">"],
+  ["amp", "&"],
+  ["apos", "'"],
+  ["quot", '"'],
+]);

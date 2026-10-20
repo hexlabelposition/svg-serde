@@ -1,5 +1,6 @@
 import { charFromReference, type EntityDeclaration } from "./doctype";
 import type { SvgParseErrorCode } from "./errors";
+import { CHAR_REFERENCE, PREDEFINED_ENTITIES } from "./xml";
 
 export interface EntityLimits {
   maxEntityExpansions: number;
@@ -13,16 +14,6 @@ export interface EntityLimits {
  * limits are reached.
  */
 const MAX_ENTITY_NESTING = 64;
-
-const PREDEFINED_ENTITIES: ReadonlyMap<string, string> = new Map([
-  ["lt", "<"],
-  ["gt", ">"],
-  ["amp", "&"],
-  ["apos", "'"],
-  ["quot", '"'],
-]);
-
-const CHAR_REFERENCE = /^#(?:x[0-9a-fA-F]+|[0-9]+)$/;
 
 interface Expansion {
   text: string;

@@ -1,4 +1,4 @@
-import { INVALID_CHAR, NAME } from "./xml";
+import { CHAR_REFERENCE, INVALID_CHAR, NAME, PREDEFINED_ENTITIES } from "./xml";
 
 /**
  * A general entity declared in the DOCTYPE internal subset.
@@ -16,11 +16,6 @@ export type EntityDeclaration =
       type: "external";
     };
 
-/**
- * Entities predefined by XML. Redeclaring them has no effect.
- */
-const PREDEFINED_ENTITIES = new Set(["lt", "gt", "amp", "apos", "quot"]);
-
 const S = "[ \\t\\r\\n]";
 const QUOTED = `(?:"[^"]*"|'[^']*')`;
 
@@ -35,7 +30,6 @@ const EXTERNAL_ENTITY = new RegExp(
 );
 
 const WHITESPACE = /[ \t\r\n]/;
-const CHAR_REFERENCE = /^#(?:x[0-9a-fA-F]+|[0-9]+)$/;
 
 /**
  * Collects general entity declarations from the internal subset of a DOCTYPE.
@@ -87,7 +81,8 @@ export function parseEntityDeclarations(
         !PREDEFINED_ENTITIES.has(entity.name) &&
         !entities.has(entity.name)
       ) {
-        // The first declaration of an entity is binding.
+        // Redeclaring a predefined entity has no effect, and the first
+        // declaration of any other entity is binding.
         entities.set(entity.name, entity.declaration);
       }
       i = end + 1;

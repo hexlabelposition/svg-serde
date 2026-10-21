@@ -20,7 +20,7 @@ Working with SVG often means working with XML strings or browser DOM nodes. `svg
 - **Safe for untrusted input.** External entities are never loaded, and input size, nesting depth, and entity expansion are limited.
 - **Plain data.** The tree has no classes, DOM nodes, or parent references, so it can be stored as JSON or sent to a worker.
 - **No implicit interpretation.** Attribute values stay strings, without evaluating CSS, units, or transforms.
-- **Small and portable.** No runtime dependencies, about 12 kB gzipped, and runs on Node.js, Bun, and in browsers.
+- **Small and portable.** No runtime dependencies, about 7 kB minified and gzipped, and runs on Node.js, Bun, and in browsers.
 - **Fast.** Parsing is 4–6× faster than svgson and 2–3× faster than svg-parser on typical files. See [Performance](#performance).
 
 The library focuses on one responsibility: **conversion between SVG markup and a structured object representation**. The following are intentionally out of scope and can be handled by separate libraries:
@@ -504,6 +504,15 @@ Parsing SVG into an object tree does **not** make arbitrary SVG safe to render i
 | Attribute values                               | Strings                                | Strings                                | Numeric strings become numbers                        |
 
 svgson can also transform nodes while parsing, and svg-parser produces a [hast](https://github.com/syntax-tree/hast)-like tree. Choose svg-serde when the tree has to be written back without losing or changing data.
+
+### Bundle size
+
+Measured on svg-serde 1.0.0. The original build is the published `dist/index.js`; the minified build was produced with `tsdown --minify`.
+
+|          | Uncompressed | gzip    | brotli  |
+| -------- | ------------ | ------- | ------- |
+| Original | 42.8 kB      | 12.5 kB | 10.9 kB |
+| Minified | 18.7 kB      | 7.1 kB  | 6.4 kB  |
 
 ### Performance
 
